@@ -5,6 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Check required environment variables
+if (!process.env.SUPABASE_SERVICE_KEY) {
+  console.error('ERROR: SUPABASE_SERVICE_KEY environment variable is not set!');
+  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+  process.exit(1);
+}
+
 // Supabase client (server-side with service key)
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://fxqddamrgadttkfxvjth.supabase.co',
