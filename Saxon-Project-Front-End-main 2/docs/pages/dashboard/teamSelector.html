@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Select Season & Team Level - Strike Master</title>
+    <link rel="stylesheet" type="text/css" href="/docs/assets/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/docs/assets/css/stored-colors.css">
+    <script src="/docs/assets/js/accent-loader.js"></script>
+
+  <style>
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Page container */
+    .container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .selection-box {
+      background: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      border: 2px solid var(--accent-color);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .selection-box h1 {
+      color: var(--accent-color);
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .selection-box p {
+      color: var(--text-color);
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+      text-align: left;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--text-color);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background: var(--content-bg);
+      color: var(--text-color);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent-color);
+      border: none;
+      border-radius: 10px;
+      color: var(--text-color);
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: var(--main-color);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background: var(--main-color);
+      color: var(--text-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <!-- Logo image that links to index.html -->
+    <a href="/docs/pages/index.html" class="logo">
+      <img src="/docs/assets/images/images/phLogo.png" alt="Strike Master Logo">
+    </a>
+
+    <div class="nav-links">
+      <a href="/docs/pages/dashboard/teamSelector.html">Team Selector</a>
+      <a href="/docs/pages/dashboard/boysRecords.html">Records</a>
+      <a href="/docs/pages/dashboard/boysPlayers.html">Players</a>
+      <a href="/docs/pages/settings/appearanceSettings.html">Settings</a>
+      <a href="/docs/pages/dashboard/myTeam.html">My Team</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="selection-box">
+      <h1>Select Your Season</h1>
+      <p>Choose the team level and season you want to view.</p>
+
+      <form action="season-dashboard.html" method="GET">
+        
+        <div class="form-group">
+          <label for="team-level">Team Level</label>
+          <select id="team-level" name="team">
+            <option value="varsity">Varsity</option>
+            <option value="jv">Junior Varsity</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="season">Season</label>
+          <select id="season" name="season">
+            <option value="2025-2026">2025–2026</option>
+            <option value="2024-2025">2024–2025</option>
+            <option value="2023-2024">2023–2024</option>
+            <option value="2022-2023">2022–2023</option>
+          </select>
+        </div>
+
+        <button type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2025 Strike Master | Season Selection</p>
+  </div>
+
+</body>
+</html>
