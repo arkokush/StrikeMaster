@@ -20,7 +20,14 @@ const supabase = createClient(
 
 // CORS - allow GitHub Pages to call this API
 app.use(cors({
-  origin: ['https://maxklinchik.github.io', 'http://localhost:8080', 'http://localhost:3000'],
+  origin: [
+    'https://arkokush.github.io',
+    'https://maxklinchik.github.io',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://127.0.0.1:5500',  // VS Code Live Server
+    'http://localhost:5500'
+  ],
   credentials: true
 }));
 
@@ -86,6 +93,98 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(401).json({ error: error.message });
+  }
+});
+
+// Coach/Director Sign Up (generates unique coach code)
+app.post('/api/auth/signup-coach', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
+    // Generate unique coach code (6 alphanumeric characters)
+    const coachCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Create auth user
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (authError) throw authError;
+
+    // Create user profile with coach code
+    const { data: userData, error: profileError } = await supabase
+      .from('users')
+      .insert([{
+        id: authData.user.id,
+        email,
+        first_name: name.split(' ')[0] || name,
+        last_name: name.split(' ').slice(1).join(' ') || '',
+        role: 'coach',
+        coach_code: coachCode
+      }])
+      .select()
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Generate session token
+    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    res.json({ 
+      success: true,
+      token: sessionData?.session?.access_token,
+      user: {
+        ...userData,
+        coach_code: coachCode
+      }
+    });
+  } catch (error) {
+    console.error('Coach signup error:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Student Sign In with Coach Code
+app.post('/api/auth/signin-code', async (req, res) => {
+  try {
+    const { coachCode } = req.body;
+    
+    if (!coachCode) {
+      return res.status(400).json({ message: 'Coach code is required' });
+    }
+
+    // Find coach by code
+    const { data: coach, error: coachError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('coach_code', coachCode.toUpperCase())
+      .single();
+
+    if (coachError || !coach) {
+      return res.status(404).json({ message: 'Invalid coach code' });
+    }
+
+    // Generate a simple token for student access (view-only)
+    const studentToken = `student_${coachCode}_${Date.now()}`;
+
+    res.json({ 
+      success: true,
+      token: studentToken,
+      coach: {
+        id: coach.id,
+        name: `${coach.first_name} ${coach.last_name}`.trim(),
+        email: coach.email
+      },
+      accessLevel: 'student'
+    });
+  } catch (error) {
+    console.error('Student signin error:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

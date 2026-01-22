@@ -6,6 +6,7 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
   <style>
     body { font-family: Arial; background:white; color:#3e2723; display:flex; justify-content:center; align-items:center; height:100vh; }
     .container { background:#f9f9f9; padding:20px; border-radius:10px; width:380px; box-shadow:0 0 10px rgba(0,0,0,0.3); }
@@ -45,7 +46,7 @@
         const name = `${firstName} ${lastName}`.trim();
         message.textContent = '';
         try {
-          const res = await fetch('/api/auth/signup-coach', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email, password }) });
+          const res = await api.post('/api/auth/signup-coach', { name, email, password });
           const data = await res.json();
           if (!res.ok) { message.textContent = data.message || 'Signup failed'; message.style.color = 'red'; return; }
           // store token for immediate use

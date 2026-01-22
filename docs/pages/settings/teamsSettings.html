@@ -7,6 +7,7 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
 
   <style>
     body {
@@ -195,7 +196,7 @@ let teams = [];
 // Load teams from backend
 async function loadTeams() {
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/teams");
+    const res = await api.get('/api/teams');
     teams = await res.json();
     renderTeams();
   } catch (err) {
@@ -214,9 +215,7 @@ function renderTeams() {
     removeBtn.textContent = 'Remove';
     removeBtn.onclick = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:5000/api/teams/${encodeURIComponent(team.name)}`, {
-          method: 'DELETE'
-        });
+        const res = await api.delete(`/api/teams/${encodeURIComponent(team.name)}`);
         if (res.ok) {
           loadTeams(); // reload list
         } else {
@@ -239,11 +238,7 @@ addTeamBtn.addEventListener('click', async () => {
   if (!name) return alert('Enter a team name');
 
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/teams", {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name })
-    });
+    const res = await api.post('/api/teams', { name });
 
     const data = await res.json();
     if (!res.ok) {

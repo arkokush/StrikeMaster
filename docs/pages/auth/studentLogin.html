@@ -6,6 +6,7 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -71,7 +72,7 @@
       const msgEl = document.getElementById('message');
       msgEl.textContent = '';
       try {
-        const res = await fetch('/api/auth/signin-code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ coachCode: code }) });
+        const res = await api.post('/api/auth/signin-code', { coachCode: code });
         const data = await res.json();
         if (!res.ok) { msgEl.textContent = data.message || 'Sign-in failed'; msgEl.style.color = 'red'; return; }
         if (data.token) localStorage.setItem('bowling_token', data.token);

@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
     <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
     <script src="../../assets/js/accent-loader.js"></script>
+    <script src="../../assets/js/config/api.js"></script>
   <style>
     body {
       margin: 0;
@@ -193,7 +194,7 @@
   // -----------------------
   async function loadPlayers() {
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/players");
+      const res = await api.get('/api/players');
       players = await res.json();
       renderPlayers();
     } catch (err) {
@@ -289,11 +290,7 @@ async function addPlayer() {
   if (!name) return alert("Enter a valid player name");
 
   try {
-    const res = await fetch("http://127.0.0.1:5000/api/players", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
+    const res = await api.post('/api/players', { name });
 
     const data = await res.json();
 
@@ -314,9 +311,7 @@ async function addPlayer() {
   // -----------------------
   async function removePlayer(name) {
     try {
-      const res = await fetch(`http://127.0.0.1:5000/players/${encodeURIComponent(name)}`, {
-        method: "DELETE",
-      });
+      const res = await api.delete(`/api/players/${encodeURIComponent(name)}`);
 
       const data = await res.json();
 

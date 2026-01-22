@@ -2,9 +2,11 @@
   "name": "strikemaster",
   "version": "1.0.0",
   "description": "StrikeMaster - Team Management Application",
-  "main": "server.js",
+  "main": "api/server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node api/server.js",
+    "postinstall": "cd api && npm install"
   },
   "keywords": ["strikemaster", "team-management"],
   "author": "",
@@ -12,7 +14,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "@supabase/supabase-js": "^2.39.3",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
   },
   "engines": {
     "node": ">=18.0.0"

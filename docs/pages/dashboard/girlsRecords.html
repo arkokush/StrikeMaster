@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="../../assets/css/records.css">
     <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
     <script src="../../assets/js/accent-loader.js"></script>
+    <script src="../../assets/js/config/api.js"></script>
 </head>
 <body>
   <div class="navbar">
@@ -113,7 +114,7 @@ const editDateControls = document.getElementById('editDateControls');
 // ---------------- Load players ----------------
 async function loadPlayers() {
     try {
-        const res = await fetch("http://127.0.0.1:5000/api/players");
+        const res = await api.get('/api/players');
         players = await res.json();
         renderTable();
     } catch (err) {
@@ -125,7 +126,7 @@ loadPlayers();
 // ---------------- Load teams for new date ----------------
 async function loadTeams() {
     try {
-        const res = await fetch("http://127.0.0.1:5000/api/teams");
+        const res = await api.get('/api/teams');
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const data = await res.json();
 

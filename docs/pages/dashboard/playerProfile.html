@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
     <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
     <script src="../../assets/js/accent-loader.js"></script>
+    <script src="../../assets/js/config/api.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -108,7 +109,7 @@
       }
 
       try {
-        const res = await fetch(`http://127.0.0.1:5000/api/players/${encodeURIComponent(name)}`);
+        const res = await api.get(`/api/players/${encodeURIComponent(name)}`);
         if (!res.ok) throw new Error();
 
         const player = await res.json();
