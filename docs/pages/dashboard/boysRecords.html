@@ -97,6 +97,7 @@ let teacherAccess = auth.isCoach();   // Dynamically set based on login
 let opponents = {}; // All events
 let editMode = false;
 let players = [];
+let allOpponents = []; // List of opponent schools
 
 // Setup logout button
 document.getElementById('logoutBtn').addEventListener('click', (e) => {
@@ -149,31 +150,40 @@ async function loadPlayers() {
 }
 loadPlayers();
 
-// ---------------- Load teams for new date ----------------
-async function loadTeams() {
-    try {
-        const res = await api.get('/api/teams');
-        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-        const data = await res.json();
+// ---------------- Load opponents ----------------
+async function loadOpponents() {
+    // Common New Jersey high school bowling opponents
+    allOpponents = [
+        'Pascack Hills',
+        'Pascack Valley',
+        'Northern Valley Demarest',
+        'Northern Valley Old Tappan',
+        'Ramsey',
+        'Mahwah',
+        'Ridgewood',
+        'Paramus',
+        'Fair Lawn',
+        'Tenafly',
+        'Bergenfield',
+        'Dumont',
+        'Hackensack',
+        'Indian Hills',
+        'River Dell',
+        'Westwood'
+    ];
 
-        const teamsArray = Array.isArray(data) ? data : data.teams;
-        allTeams = teamsArray.map(t => t.name);   // ← store all team names
+    // Populate opponent dropdown
+    newOpponentSelect.innerHTML = '<option value="" selected disabled>Select Opponent</option>';
+    allOpponents.forEach(opponent => {
+        const opt = document.createElement('option');
+        opt.value = opponent;
+        opt.textContent = opponent;
+        newOpponentSelect.appendChild(opt);
+    });
 
-        newOpponentSelect.innerHTML = '<option value="" selected disabled>Select Opponent</option>';
-        teamsArray.forEach(team => {
-            const opt = document.createElement('option');
-            opt.value = team.name;
-            opt.textContent = team.name;
-            newOpponentSelect.appendChild(opt);
-        });
-
-        populateOpponents();  // ← refresh viewing dropdowns
-    } catch (err) {
-        console.error("Failed to load teams:", err);
-        alert("Could not load teams from backend.");
-    }
+    populateOpponents();  // ← refresh viewing dropdowns
 }
-loadTeams();
+loadOpponents();
 
 // ---------------- Edit Mode ----------------
 function toggleMode() {
@@ -206,7 +216,7 @@ if (!teacherAccess) {
 function populateOpponents() {
     opponentSelect.innerHTML = '<option value="" selected disabled>Select opponent</option>';
 
-    const uniqueOpponents = new Set(allTeams);  // ← start with all backend teams
+    const uniqueOpponents = new Set(allOpponents);  // ← start with all opponents
 
     // Add any teams that already have dates stored
     Object.values(opponents).forEach(placeObj => {
