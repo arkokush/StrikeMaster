@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Strike Master - Girls Players</title>
+  <title>Girls Players - Strike Master</title>
   <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
@@ -12,162 +12,336 @@
   <style>
     body {
       margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-color);
       color: var(--text-color);
-      text-align: center;
     }
 
     .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background: var(--card-bg);
-      padding: 25px;
-      border-radius: 12px;
-      border: 2px solid var(--accent-color);
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
     }
 
-    .split-button {
-      display: flex;
-      width: 300px;
-      height: 40px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 2px solid #fff;
-      margin-left: 40px;
+    .page-header {
+      text-align: center;
+      padding: 30px 0;
     }
 
-    .split-button a {
-      flex: 1;
-      text-decoration: none;
-      color: var(--main-color);
-      font-weight: bold;
+    .page-header h1 {
+      color: var(--accent-color);
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    /* Gender Toggle */
+    .gender-toggle {
       display: flex;
-      align-items: center;
       justify-content: center;
-      transition: background-color 0.2s ease;
+      gap: 10px;
+      margin-bottom: 25px;
     }
 
-    .girls { background-color: #b2b2b2; }
-    .girls:hover { background-color: #929292; }
-    .boys { background-color: #b2b2b2; }
-    .boys:hover { background-color: #929292; }
-    .split-button a.active { filter: brightness(75%); }
-
-    button {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      margin: 8px;
-      font-size: 14px;
-      border-radius: 5px;
+    .gender-btn {
+      padding: 12px 40px;
+      border: 2px solid var(--accent-color);
+      background: transparent;
+      color: var(--accent-color);
+      border-radius: 8px;
       cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.2s;
     }
 
-    button:hover {
-      background-color: var(--acccent-color-hover);
+    .gender-btn.active {
+      background: var(--accent-color);
+      color: white;
     }
 
-    .player-form {
+    /* Add Player Section */
+    .add-player-section {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .add-player-section h3 {
+      color: var(--accent-color);
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
+    .add-form {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin: 20px 0;
-      text-align: left;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 15px;
+      align-items: end;
     }
 
-    .player-form label {
-      display: block;
-      margin-bottom: 4px;
-      font-weight: 500;
+    .form-group {
+      display: flex;
+      flex-direction: column;
     }
 
-    .player-form input, .player-form select {
-      width: 100%;
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .form-group input, .form-group select {
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      box-sizing: border-box;
+      font-size: 14px;
+      background: var(--content-bg);
+      color: var(--text-color);
     }
 
-    .player-form .full-width {
-      grid-column: 1 / -1;
+    .add-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      height: 42px;
     }
 
-    .player-list {
-      margin-top: 20px;
-      text-align: left;
+    .add-btn:hover {
+      opacity: 0.9;
     }
 
-    .player-item {
+    /* Players List */
+    .players-section {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .players-section h3 {
+      color: var(--accent-color);
+      padding: 15px 20px;
+      margin: 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .player-card {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.2s;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
-      padding: 12px 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      position: relative;
-      color: black;
     }
 
-    .player-info {
-      flex: 1;
+    .player-card:last-child {
+      border-bottom: none;
     }
 
-    .player-name {
-      font-weight: bold;
-      font-size: 16px;
+    .player-card:hover {
+      background: rgba(0,0,0,0.03);
     }
 
-    .player-details {
+    .player-card.selected {
+      background: rgba(var(--accent-color-rgb, 255, 165, 0), 0.1);
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .player-info h4 {
+      margin: 0 0 5px 0;
+      font-size: 18px;
+      color: var(--text-color);
+    }
+
+    .player-info span {
       font-size: 13px;
-      color: #666;
-      margin-top: 4px;
+      color: #888;
     }
 
-    .options-btn {
-      cursor: pointer;
-      font-size: 20px;
-      padding: 4px 10px;
-      border-radius: 50%;
-      background: transparent;
+    .player-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .delete-btn {
+      background: #dc3545;
+      color: white;
       border: none;
-      color: black;
-    }
-
-    .options-btn:hover {
-      background: #ddd;
-    }
-
-    .options-menu {
-      position: absolute;
-      right: 15px;
-      top: 45px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      display: none;
-      z-index: 10;
-    }
-
-    .options-menu div {
-      padding: 10px 15px;
+      padding: 6px 12px;
+      border-radius: 4px;
       cursor: pointer;
+      font-size: 12px;
     }
 
-    .options-menu div:hover {
-      background: #f0f0f0;
+    .delete-btn:hover {
+      background: #c82333;
+    }
+
+    .no-players {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    /* Player Stats Modal */
+    .stats-panel {
+      display: none;
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      margin-top: 25px;
+      overflow: hidden;
+    }
+
+    .stats-panel.active {
+      display: block;
+    }
+
+    .stats-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stats-header h2 {
+      margin: 0;
+      color: var(--accent-color);
+    }
+
+    .close-stats {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #888;
+      padding: 0 10px;
+    }
+
+    /* Filter Section */
+    .stats-filter {
+      padding: 15px 20px;
+      background: var(--content-bg);
+      border-bottom: 1px solid #eee;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--accent-color);
+      background: transparent;
+      color: var(--accent-color);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .filter-btn.active {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    /* Stats Summary */
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      padding: 20px;
+      background: var(--content-bg);
+    }
+
+    .summary-box {
+      text-align: center;
+      padding: 15px;
+      background: var(--card-bg);
+      border-radius: 8px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    /* Match History Table */
+    .match-history {
+      padding: 20px;
+    }
+
+    .match-history h3 {
+      color: var(--text-color);
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .history-table th {
+      background: var(--accent-color);
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .history-table td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .history-table tr:hover {
+      background: rgba(0,0,0,0.02);
+    }
+
+    .varsity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #ffc107;
+      color: #000;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .no-stats {
+      text-align: center;
+      padding: 40px;
+      color: #888;
     }
 
     .message {
-      padding: 10px;
-      margin: 10px 0;
+      padding: 12px;
+      margin-bottom: 20px;
       border-radius: 5px;
+      text-align: center;
+      font-weight: 600;
       display: none;
     }
 
@@ -182,6 +356,25 @@
       color: #721c24;
       display: block;
     }
+
+    @media (max-width: 768px) {
+      .add-form {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .history-table {
+        font-size: 13px;
+      }
+
+      .history-table th,
+      .history-table td {
+        padding: 8px 4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -189,16 +382,9 @@
     <a href="../../index.html" class="logo">
       <img src="../../assets/images/images/phLogo.png" alt="Strike Master Logo">
     </a>
-
-    <div class="split-button">
-      <a href="boysRecords.html" class="boys">Boys</a>
-      <a href="girlsRecords.html" class="girls active">Girls</a>
-    </div>
-
     <div class="nav-links">
       <a href="teamSelector.html">Home</a>
-      <a href="girlsRecords.html">Records</a>
-      <a href="girlsPlayers.html">Players</a>
+      <a href="boysPlayers.html">Players</a>
       <a href="../settings/appearanceSettings.html">Settings</a>
       <a href="myTeam.html">My Team</a>
       <a href="#" id="logoutBtn" style="color:#dc3545;">Logout</a>
@@ -206,235 +392,411 @@
   </div>
 
   <div class="container">
-    <h1>Girls Players</h1>
-    <p>Add players to your girls bowling team. They will appear in the Records tab.</p>
+    <div class="page-header">
+      <h1>Players</h1>
+      <p>Manage players and view individual statistics</p>
+    </div>
+
+    <div class="gender-toggle">
+      <button class="gender-btn" data-gender="boys">Boys</button>
+      <button class="gender-btn active" data-gender="girls">Girls</button>
+    </div>
 
     <div id="message" class="message"></div>
 
-    <div class="player-form" id="addPlayerForm">
-      <div>
-        <label>First Name *</label>
-        <input type="text" id="firstName" required>
-      </div>
-      <div>
-        <label>Last Name *</label>
-        <input type="text" id="lastName" required>
-      </div>
-      <div>
-        <label>Graduation Year *</label>
-        <select id="gradYear" required>
-          <option value="">Select Year</option>
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
-          <option value="2029">2029</option>
-        </select>
-      </div>
-      <div>
-        <label>Email (optional)</label>
-        <input type="email" id="playerEmail" placeholder="student@email.com">
-      </div>
-      <div class="full-width" style="text-align: center;">
-        <button id="addPlayerBtn">Add Player</button>
+    <div class="add-player-section">
+      <h3>Add New Player</h3>
+      <div class="add-form">
+        <div class="form-group">
+          <label>First Name *</label>
+          <input type="text" id="firstName" placeholder="First name">
+        </div>
+        <div class="form-group">
+          <label>Last Name *</label>
+          <input type="text" id="lastName" placeholder="Last name">
+        </div>
+        <div class="form-group">
+          <label>Grad Year *</label>
+          <select id="gradYear">
+            <option value="">Select</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+          </select>
+        </div>
+        <button class="add-btn" id="addPlayerBtn">Add Player</button>
       </div>
     </div>
 
-    <div class="player-list" id="playerList">
-      <p style="text-align:center; color:#666;">Loading players...</p>
+    <div class="players-section">
+      <h3 id="playersTitle">Girls Players</h3>
+      <div id="playersList">
+        <div class="no-players">Loading players...</div>
+      </div>
+    </div>
+
+    <!-- Player Stats Panel -->
+    <div class="stats-panel" id="statsPanel">
+      <div class="stats-header">
+        <h2 id="statsPlayerName">Player Stats</h2>
+        <button class="close-stats" id="closeStats">&times;</button>
+      </div>
+
+      <div class="stats-filter">
+        <span class="filter-label">Filter:</span>
+        <button class="filter-btn active" data-filter="all">All Matches</button>
+        <button class="filter-btn" data-filter="varsity">Varsity Only</button>
+        <button class="filter-btn" data-filter="jv">JV Only</button>
+      </div>
+
+      <div class="stats-summary" id="statsSummary">
+        <div class="summary-box">
+          <div class="summary-label">Matches</div>
+          <div class="summary-value" id="totalMatches">0</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">Avg Game 1</div>
+          <div class="summary-value" id="avgGame1">0.0</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">Avg Game 2</div>
+          <div class="summary-value" id="avgGame2">0.0</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">Avg Game 3</div>
+          <div class="summary-value" id="avgGame3">0.0</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">Total Avg</div>
+          <div class="summary-value" id="totalAvg">0.0</div>
+        </div>
+      </div>
+
+      <div class="match-history">
+        <h3>Match History</h3>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Opponent</th>
+              <th>Game 1</th>
+              <th>Game 2</th>
+              <th>Game 3</th>
+              <th>Total</th>
+              <th>Avg</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="matchHistoryBody">
+            <tr><td colspan="8" class="no-stats">No match data available</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-<script>
-  // Require authentication
-  if (!auth.requireCoach('../auth/teacherLogin.html')) {
-    throw new Error('Not authenticated');
-  }
+  <script>
+    let currentGender = 'girls';
+    let coachId = null;
+    let players = [];
+    let selectedPlayerId = null;
+    let playerRecords = [];
+    let currentFilter = 'all';
 
-  const currentUser = auth.getUser();
-  const GENDER = 'girls';
-  let players = [];
-
-  // Setup logout button
-  document.getElementById('logoutBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (confirm('Are you sure you want to logout?')) {
-      auth.logout('../../index.html');
-    }
-  });
-
-  // Load players from API
-  async function loadPlayers() {
-    if (!currentUser || !currentUser.id) {
-      document.getElementById('addPlayerForm').style.display = 'none';
-      showMessage('No user data found. Please log out and log in again.', 'error');
-      return;
-    }
-
-    try {
-      console.log('Fetching players for coach:', currentUser.id, 'gender:', GENDER);
-      const res = await api.get(`/api/players?coachId=${currentUser.id}&gender=${GENDER}`);
-      
-      if (!res.ok) {
-        console.error('API error:', res.status);
-        const err = await res.json();
-        showMessage(err.error || 'Failed to load players from server.', 'error');
-        return;
+    // Check authentication
+    async function checkAuth() {
+      const userData = localStorage.getItem('bowling_user');
+      if (!userData) {
+        window.location.href = '../auth/teacherLogin.html';
+        return null;
       }
-      
-      players = await res.json();
-      console.log('Players found:', players);
-      renderPlayers();
-    } catch (err) {
-      console.error('Failed to load players:', err);
-      playerList.innerHTML = '<p style="text-align:center; color:red;">Failed to load players.</p>';
-    }
-  }
-
-  // Render players list
-  function renderPlayers() {
-    if (players.length === 0) {
-      playerList.innerHTML = '<p style="text-align:center; color:#666;">No players yet. Add your first player above!</p>';
-      return;
+      try {
+        const user = JSON.parse(userData);
+        coachId = user.id;
+        return user;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '../auth/teacherLogin.html';
+        return null;
+      }
     }
 
-    playerList.innerHTML = "";
-    players.forEach((player) => {
-      const item = document.createElement("div");
-      item.className = "player-item";
-
-      const info = document.createElement("div");
-      info.className = "player-info";
-
-      const name = document.createElement("div");
-      name.className = "player-name";
-      name.textContent = player.first_name + ' ' + player.last_name;
-
-      const details = document.createElement("div");
-      details.className = "player-details";
-      details.textContent = 'Class of ' + (player.grad_year || 'N/A') + (player.email ? ' • ' + player.email : '');
-
-      info.appendChild(name);
-      info.appendChild(details);
-
-      // Three-dot menu
-      const menuBtn = document.createElement("button");
-      menuBtn.className = "options-btn";
-      menuBtn.textContent = "⋮";
-
-      const menu = document.createElement("div");
-      menu.className = "options-menu";
-
-      const profileOpt = document.createElement("div");
-      profileOpt.textContent = "View Profile";
-      profileOpt.onclick = () => {
-        window.location.href = 'playerProfile.html?id=' + player.id;
-      };
-      menu.appendChild(profileOpt);
-
-      const removeOpt = document.createElement("div");
-      removeOpt.textContent = "Remove Player";
-      removeOpt.onclick = () => removePlayer(player.id);
-      menu.appendChild(removeOpt);
-
-      menuBtn.onclick = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.options-menu').forEach(m => m.style.display = 'none');
-        menu.style.display = menu.style.display === "none" ? "block" : "none";
-      };
-
-      document.addEventListener("click", () => {
-        menu.style.display = "none";
+    // Gender toggle
+    document.querySelectorAll('.gender-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentGender = btn.dataset.gender;
+        document.getElementById('playersTitle').textContent = 
+          currentGender === 'boys' ? 'Boys Players' : 'Girls Players';
+        closeStatsPanel();
+        loadPlayers();
       });
-
-      item.appendChild(info);
-      item.appendChild(menuBtn);
-      item.appendChild(menu);
-      playerList.appendChild(item);
     });
-  }
 
-  // Add player
-  async function addPlayer() {
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const gradYear = document.getElementById('gradYear').value;
-    const email = document.getElementById('playerEmail').value.trim();
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        displayPlayerStats();
+      });
+    });
 
-    if (!firstName || !lastName || !gradYear) {
-      showMessage('Please fill in all required fields.', 'error');
-      return;
+    // Close stats panel
+    document.getElementById('closeStats').addEventListener('click', closeStatsPanel);
+
+    function closeStatsPanel() {
+      document.getElementById('statsPanel').classList.remove('active');
+      document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+      selectedPlayerId = null;
     }
 
-    if (!currentUser || !currentUser.id) {
-      showMessage('Not logged in. Please log in again.', 'error');
-      return;
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('bowling_user');
+      window.location.href = '../auth/teacherLogin.html';
+    });
+
+    // Load players
+    async function loadPlayers() {
+      const container = document.getElementById('playersList');
+      
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
+        
+        if (!response.ok) throw new Error('Failed to fetch players');
+        
+        players = await response.json();
+
+        if (!players || players.length === 0) {
+          container.innerHTML = '<div class="no-players">No players yet. Add your first player above!</div>';
+          return;
+        }
+
+        container.innerHTML = players.map(player => `
+          <div class="player-card" data-player-id="${player.id}" onclick="selectPlayer('${player.id}')">
+            <div class="player-info">
+              <h4>${player.first_name} ${player.last_name}</h4>
+              <span>Class of ${player.grad_year || 'N/A'}</span>
+            </div>
+            <div class="player-actions">
+              <button class="delete-btn" onclick="event.stopPropagation(); deletePlayer('${player.id}')">Remove</button>
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading players:', error);
+        container.innerHTML = '<div class="no-players">Error loading players. Please try again.</div>';
+      }
     }
 
-    try {
-      const res = await api.post('/api/players', {
-        coachId: currentUser.id,
-        firstName,
-        lastName,
-        gradYear,
-        gender: GENDER
+    // Select player and show stats
+    async function selectPlayer(playerId) {
+      selectedPlayerId = playerId;
+      
+      // Highlight selected player
+      document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+      document.querySelector(`[data-player-id="${playerId}"]`).classList.add('selected');
+
+      const player = players.find(p => p.id === playerId);
+      document.getElementById('statsPlayerName').textContent = `${player.first_name} ${player.last_name}'s Stats`;
+
+      // Load player records
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/players/${playerId}/records`);
+        
+        if (response.ok) {
+          playerRecords = await response.json();
+        } else {
+          playerRecords = [];
+        }
+
+        displayPlayerStats();
+        document.getElementById('statsPanel').classList.add('active');
+        
+        // Scroll to stats panel
+        document.getElementById('statsPanel').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (error) {
+        console.error('Error loading player records:', error);
+        playerRecords = [];
+        displayPlayerStats();
+        document.getElementById('statsPanel').classList.add('active');
+      }
+    }
+
+    // Display player stats based on filter
+    function displayPlayerStats() {
+      let filteredRecords = playerRecords;
+
+      if (currentFilter === 'varsity') {
+        filteredRecords = playerRecords.filter(r => r.is_varsity === true);
+      } else if (currentFilter === 'jv') {
+        filteredRecords = playerRecords.filter(r => r.is_varsity === false);
+      }
+
+      // Calculate averages
+      const matchCount = filteredRecords.length;
+      let totalG1 = 0, totalG2 = 0, totalG3 = 0, totalAll = 0;
+      let countG1 = 0, countG2 = 0, countG3 = 0, countAll = 0;
+
+      filteredRecords.forEach(r => {
+        if (r.game1) { totalG1 += r.game1; countG1++; }
+        if (r.game2) { totalG2 += r.game2; countG2++; }
+        if (r.game3) { totalG3 += r.game3; countG3++; }
+        const gameTotal = (r.game1 || 0) + (r.game2 || 0) + (r.game3 || 0);
+        const gamesPlayed = (r.game1 ? 1 : 0) + (r.game2 ? 1 : 0) + (r.game3 ? 1 : 0);
+        if (gamesPlayed > 0) {
+          totalAll += gameTotal / gamesPlayed;
+          countAll++;
+        }
       });
 
-      const data = await res.json();
+      document.getElementById('totalMatches').textContent = matchCount;
+      document.getElementById('avgGame1').textContent = countG1 > 0 ? (totalG1 / countG1).toFixed(1) : '0.0';
+      document.getElementById('avgGame2').textContent = countG2 > 0 ? (totalG2 / countG2).toFixed(1) : '0.0';
+      document.getElementById('avgGame3').textContent = countG3 > 0 ? (totalG3 / countG3).toFixed(1) : '0.0';
+      document.getElementById('totalAvg').textContent = countAll > 0 ? (totalAll / countAll).toFixed(1) : '0.0';
 
-      if (!res.ok) {
-        showMessage(data.error || "Failed to add player", 'error');
+      // Build match history table
+      const tbody = document.getElementById('matchHistoryBody');
+      
+      if (filteredRecords.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-stats">No match data available for this filter</td></tr>';
         return;
       }
 
-      // Clear form
-      document.getElementById('firstName').value = '';
-      document.getElementById('lastName').value = '';
-      document.getElementById('gradYear').value = '';
-      document.getElementById('playerEmail').value = '';
+      // Sort by date (newest first)
+      filteredRecords.sort((a, b) => {
+        const dateA = a.match ? new Date(a.match.match_date) : new Date(0);
+        const dateB = b.match ? new Date(b.match.match_date) : new Date(0);
+        return dateB - dateA;
+      });
 
-      showMessage(`${firstName} ${lastName} added successfully!`, 'success');
-      loadPlayers();
-    } catch (err) {
-      console.error("Add player failed:", err);
-      showMessage('Failed to add player. Please try again.', 'error');
+      tbody.innerHTML = filteredRecords.map(record => {
+        const match = record.match || {};
+        const date = match.match_date ? new Date(match.match_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        }) : 'N/A';
+        
+        const g1 = record.game1 || 0;
+        const g2 = record.game2 || 0;
+        const g3 = record.game3 || 0;
+        const total = g1 + g2 + g3;
+        const gamesPlayed = (record.game1 ? 1 : 0) + (record.game2 ? 1 : 0) + (record.game3 ? 1 : 0);
+        const avg = gamesPlayed > 0 ? (total / gamesPlayed).toFixed(1) : '0.0';
+
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${match.opponent || 'Unknown'}</td>
+            <td>${record.game1 || '-'}</td>
+            <td>${record.game2 || '-'}</td>
+            <td>${record.game3 || '-'}</td>
+            <td><strong>${total}</strong></td>
+            <td>${avg}</td>
+            <td>${record.is_varsity ? '<span class="varsity-badge">V</span>' : 'JV'}</td>
+          </tr>
+        `;
+      }).join('');
     }
-  }
 
-  // Remove player
-  async function removePlayer(playerId) {
-    if (!confirm('Are you sure you want to remove this player?')) return;
+    // Add player
+    document.getElementById('addPlayerBtn').addEventListener('click', async () => {
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const gradYear = document.getElementById('gradYear').value;
 
-    try {
-      const res = await api.delete(`/api/players/${playerId}`);
-
-      if (!res.ok) {
-        const data = await res.json();
-        showMessage(data.error || 'Failed to remove player', 'error');
+      if (!firstName || !lastName || !gradYear) {
+        showMessage('Please fill in all required fields.', 'error');
         return;
       }
 
-      showMessage('Player removed.', 'success');
-      loadPlayers();
-    } catch (err) {
-      console.error("Remove player failed:", err);
-      showMessage('Failed to remove player.', 'error');
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/players`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            coachId: coachId,
+            firstName,
+            lastName,
+            gradYear: parseInt(gradYear),
+            gender: currentGender
+          })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to add player');
+        }
+
+        // Clear form
+        document.getElementById('firstName').value = '';
+        document.getElementById('lastName').value = '';
+        document.getElementById('gradYear').value = '';
+
+        showMessage(`${firstName} ${lastName} added successfully!`, 'success');
+        loadPlayers();
+
+      } catch (error) {
+        console.error('Error adding player:', error);
+        showMessage(error.message || 'Failed to add player.', 'error');
+      }
+    });
+
+    // Delete player
+    async function deletePlayer(playerId) {
+      if (!confirm('Are you sure you want to remove this player? This will also delete all their records.')) {
+        return;
+      }
+
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/players/${playerId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to remove player');
+        }
+
+        showMessage('Player removed.', 'success');
+        closeStatsPanel();
+        loadPlayers();
+
+      } catch (error) {
+        console.error('Error deleting player:', error);
+        showMessage(error.message || 'Failed to remove player.', 'error');
+      }
     }
-  }
 
-  // Show message
-  function showMessage(text, type) {
-    const msg = document.getElementById('message');
-    msg.textContent = text;
-    msg.className = 'message ' + type;
-    setTimeout(() => { msg.className = 'message'; }, 4000);
-  }
+    // Show message
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = `message ${type}`;
+      setTimeout(() => { msg.className = 'message'; }, 4000);
+    }
 
-  // Event listeners
-  document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
-
-  // Load on startup
-  loadPlayers();
-</script>
+    // Initialize
+    checkAuth().then(user => {
+      if (user) {
+        loadPlayers();
+      }
+    });
+  </script>
 </body>
 </html>
