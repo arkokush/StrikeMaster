@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
   <script src="../../assets/js/config/api.js"></script>
@@ -11,18 +12,14 @@
 
   <style>
     :root {
-      /* Brand colors (user controlled) */
       --accent-color: #ffa500;
       --main-color: #5f371c;
-
-      /* Theme colors */
       --bg-color: #f9f9f9;
       --content-bg: #ececec;
       --card-bg: #ededed;
       --text-color: #000000;
     }
 
-    /* Dark mode overrides */
     [data-theme="dark"] {
       --bg-color: #343434;
       --content-bg: #3e3e3e;
@@ -76,62 +73,137 @@
       background: var(--bg-color);
       overflow-y: auto;
       color: var(--text-color);
+      position: relative;
     }
 
     h2 {
       margin-top: 0;
+      color: var(--accent-color);
     }
 
-    .team-list {
-      list-style: none;
-      padding-left: 0;
+    h3 {
+      margin-top: 30px;
+      margin-bottom: 15px;
+      color: var(--text-color);
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 8px;
     }
 
-    .team-list li {
-      padding: 8px 12px;
-      background: white;
-      margin-bottom: 8px;
-      border-radius: 6px;
+    .setting-group {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .setting-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      gap: 15px;
+      margin-bottom: 15px;
     }
 
-    .team-list button {
-      background: #e74c3c;
-      color: white;
+    .setting-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .setting-row label {
+      min-width: 120px;
+      font-weight: 600;
+    }
+
+    .setting-row input[type="color"] {
+      width: 60px;
+      height: 40px;
       border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .add-team {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .add-team input {
-      flex: 1;
-      padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid #ccc;
+      cursor: pointer;
     }
 
-    .add-team button {
+    .setting-row button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
       background: var(--accent-color);
-      border: none;
       color: white;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
     }
 
-    .add-team button:hover {
+    .setting-row button:hover {
       filter: brightness(0.9);
+    }
+
+    .reset-btn {
+      background: #666 !important;
+    }
+
+    /* Logo Grid */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .logo-option {
+      background: var(--content-bg);
+      border: 3px solid transparent;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logo-option:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .logo-option.selected {
+      border-color: var(--accent-color);
+      background: rgba(255, 165, 0, 0.1);
+    }
+
+    .logo-option img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+
+    .logo-option span {
+      display: block;
+      font-size: 12px;
+      color: var(--text-color);
+      word-break: break-word;
+    }
+
+    .current-logo-preview {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 15px;
+      background: var(--content-bg);
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .current-logo-preview img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    .current-logo-preview .info h4 {
+      margin: 0 0 5px 0;
+      color: var(--accent-color);
+    }
+
+    .current-logo-preview .info span {
+      font-size: 13px;
+      color: #888;
     }
 
     #logoutBtn {
@@ -164,6 +236,51 @@
       color: var(--accent-color);
     }
 
+    .message {
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+
+    /* Preset Colors */
+    .preset-colors {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .preset-color {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .preset-color:hover {
+      transform: scale(1.1);
+    }
+
+    .preset-color.selected {
+      border-color: var(--text-color);
+    }
   </style>
 </head>
 
@@ -171,7 +288,6 @@
 
   <div class="sidebar">
     <a href="appearanceSettings.html" class="active">Appearance</a>
-    <a href="teamsSettings.html">Teams</a>
     <a href="accountInfo.html">Account Info</a>
     <button id="logoutBtn">Logout</button>
   </div>
@@ -179,241 +295,269 @@
   <div class="content">
     <a href="../dashboard/teamSelector.html" class="close-icon">X</a>
 
-  <div id="appearance" class="section">
-    <h2>Appearance</h2>
+    <h2>Appearance Settings</h2>
+    <div id="message" class="message"></div>
 
-    <label>Accent Color:</label>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <input type="color" id="accentColorPicker" value="#ffa500">
-      <button id="resetAccent" style="padding:6px 10px;">Reset</button>
-    </div>
-
-    <br><br>
-
-    <label>Main Color:</label>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <input type="color" id="mainColorPicker" value="#5f371c">
-      <button id="resetMain" style="padding:6px 10px;">Reset</button>
-    </div>
-
-    <br><br>
-
-    <label>Theme:</label>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button id="themeToggle" style="padding:8px 12px;">
-        Toggle Light / Dark
-      </button>
-    </div>
-  </div>
-
-    <div id="teams" class="section" style="display:none;">
-      <h2>Teams</h2>
-      <ul id="teamList" class="team-list"></ul>
-
-      <div class="add-team">
-        <input type="text" id="newTeamInput" placeholder="Enter new team name" />
-        <button id="addTeamBtn">Add Team</button>
+    <!-- Theme Section -->
+    <h3>Theme</h3>
+    <div class="setting-group">
+      <div class="setting-row">
+        <label>Mode:</label>
+        <button id="themeToggle">Toggle Light / Dark</button>
       </div>
     </div>
 
-    <div id="account" class="section" style="display:none;">
-      <h2>Account Info</h2>
-      <p>Coming soon...</p>
+    <!-- Accent Color Section -->
+    <h3>Accent Color</h3>
+    <div class="setting-group">
+      <div class="setting-row">
+        <label>Custom:</label>
+        <input type="color" id="accentColorPicker" value="#ffa500">
+        <button id="resetAccent" class="reset-btn">Reset</button>
+      </div>
+      <p style="margin: 10px 0 5px; font-size: 13px; color: #888;">Quick Presets:</p>
+      <div class="preset-colors" id="accentPresets">
+        <div class="preset-color" data-color="#ffa500" style="background: #ffa500;" title="Orange (Default)"></div>
+        <div class="preset-color" data-color="#e74c3c" style="background: #e74c3c;" title="Red"></div>
+        <div class="preset-color" data-color="#3498db" style="background: #3498db;" title="Blue"></div>
+        <div class="preset-color" data-color="#2ecc71" style="background: #2ecc71;" title="Green"></div>
+        <div class="preset-color" data-color="#9b59b6" style="background: #9b59b6;" title="Purple"></div>
+        <div class="preset-color" data-color="#1abc9c" style="background: #1abc9c;" title="Teal"></div>
+        <div class="preset-color" data-color="#f39c12" style="background: #f39c12;" title="Gold"></div>
+        <div class="preset-color" data-color="#e91e63" style="background: #e91e63;" title="Pink"></div>
+      </div>
+    </div>
+
+    <!-- Main/Sidebar Color Section -->
+    <h3>Sidebar Color</h3>
+    <div class="setting-group">
+      <div class="setting-row">
+        <label>Custom:</label>
+        <input type="color" id="mainColorPicker" value="#5f371c">
+        <button id="resetMain" class="reset-btn">Reset</button>
+      </div>
+      <p style="margin: 10px 0 5px; font-size: 13px; color: #888;">Quick Presets:</p>
+      <div class="preset-colors" id="mainPresets">
+        <div class="preset-color" data-color="#5f371c" style="background: #5f371c;" title="Brown (Default)"></div>
+        <div class="preset-color" data-color="#2c3e50" style="background: #2c3e50;" title="Navy"></div>
+        <div class="preset-color" data-color="#1a1a2e" style="background: #1a1a2e;" title="Dark Blue"></div>
+        <div class="preset-color" data-color="#1e272e" style="background: #1e272e;" title="Charcoal"></div>
+        <div class="preset-color" data-color="#341f97" style="background: #341f97;" title="Indigo"></div>
+        <div class="preset-color" data-color="#222f3e" style="background: #222f3e;" title="Dark Slate"></div>
+        <div class="preset-color" data-color="#4a0e0e" style="background: #4a0e0e;" title="Maroon"></div>
+        <div class="preset-color" data-color="#0c3c26" style="background: #0c3c26;" title="Forest"></div>
+      </div>
+    </div>
+
+    <!-- Team Logo Section -->
+    <h3>Team Logo</h3>
+    <div class="setting-group">
+      <p style="margin: 0 0 10px; font-size: 14px;">Current Logo:</p>
+      <div class="current-logo-preview">
+        <img id="currentLogoImg" src="../../assets/images/Team Logos/phLogo.png" alt="Current Logo">
+        <div class="info">
+          <h4 id="currentLogoName">phLogo</h4>
+          <span>Displayed in navbar across all pages</span>
+        </div>
+      </div>
+      <p style="margin: 15px 0 10px; font-size: 14px;">Available Logos:</p>
+      <div class="logo-grid" id="logoGrid">
+        <!-- Logos will be loaded here -->
+      </div>
     </div>
   </div>
 
   <script>
-/* ---------------------------------------------------
-   ACCENT COLOR SYSTEM — WORKS ON ALL PAGES
---------------------------------------------------- */
+    // Available team logos (add more here as needed)
+    const availableLogos = [
+      { file: 'phLogo.png', name: 'Pascack Hills' },
+      { file: 'PascackHills2.png', name: 'Pascack Hills Alt' }
+    ];
 
-// Load saved accent color on page load
-(function applySavedAccent() {
-  const saved = localStorage.getItem("accentColor");
-  if (saved) {
-    document.documentElement.style.setProperty("--accent-color", saved);
-  }
-})();
+    // Current selected logo
+    let currentLogo = localStorage.getItem('teamLogo') || 'phLogo.png';
 
-// If this page has a color picker, connect it
-const picker = document.getElementById("accentColorPicker");
-if (picker) {
-  const saved = localStorage.getItem("accentColor");
-  if (saved) picker.value = saved;
+    // Initialize logo grid
+    function initLogoGrid() {
+      const grid = document.getElementById('logoGrid');
+      grid.innerHTML = availableLogos.map(logo => `
+        <div class="logo-option ${logo.file === currentLogo ? 'selected' : ''}" data-logo="${logo.file}">
+          <img src="../../assets/images/Team Logos/${logo.file}" alt="${logo.name}">
+          <span>${logo.name}</span>
+        </div>
+      `).join('');
 
-  picker.addEventListener("input", (e) => {
-    const color = e.target.value;
+      // Add click handlers
+      grid.querySelectorAll('.logo-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const logoFile = option.dataset.logo;
+          selectLogo(logoFile);
+        });
+      });
 
-    localStorage.setItem("accentColor", color);
-    document.documentElement.style.setProperty("--accent-color", color);
-  });
-}
-
-/* LIGHT / DARK MODE */
-
-(function () {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", savedTheme);
-})();
-
-document.addEventListener("DOMContentLoaded", () => {
-  const toggle = document.getElementById("themeToggle");
-  if (!toggle) return;
-
-  toggle.addEventListener("click", () => {
-    const html = document.documentElement;
-    const current = html.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-
-    html.setAttribute("data-theme", next);
-    localStorage.setItem("theme", next);
-  });
-});
-
-/* ---------------------------------------------------
-   MAIN COLOR SYSTEM — WORKS ON ALL PAGES
---------------------------------------------------- */
-
-// Load saved main color
-(function applySavedMain() {
-  const saved = localStorage.getItem("mainColor");
-  if (saved) {
-    document.documentElement.style.setProperty("--main-color", saved);
-  }
-})();
-
-const mainPicker = document.getElementById("mainColorPicker");
-if (mainPicker) {
-  const saved = localStorage.getItem("mainColor");
-  if (saved) mainPicker.value = saved;
-
-  mainPicker.addEventListener("input", (e) => {
-    const color = e.target.value;
-
-    localStorage.setItem("mainColor", color);
-    document.documentElement.style.setProperty("--main-color", color);
-  });
-}
-
-
-/* ------------------------------
-   RESET ACCENT COLOR
------------------------------- */
-const resetAccentBtn = document.getElementById("resetAccent");
-if (resetAccentBtn) {
-  resetAccentBtn.addEventListener("click", () => {
-    const defaultColor = "#ffa500";
-
-    // Update UI
-    picker.value = defaultColor;
-
-    // Update CSS variable
-    document.documentElement.style.setProperty("--accent-color", defaultColor);
-
-    // Update localStorage
-    localStorage.setItem("accentColor", defaultColor);
-  });
-}
-
-/* ------------------------------
-   RESET MAIN COLOR
------------------------------- */
-const resetMainBtn = document.getElementById("resetMain");
-if (resetMainBtn) {
-  resetMainBtn.addEventListener("click", () => {
-    const defaultColor = "#5f371c";
-
-    // Update UI
-    mainPicker.value = defaultColor;
-
-    // Update CSS variable
-    document.documentElement.style.setProperty("--main-color", defaultColor);
-
-    // Update localStorage
-    localStorage.setItem("mainColor", defaultColor);
-  });
-}
-
-
-/* ---------------------------------------------------
-   TEAMS
---------------------------------------------------- */
-const teamList = document.getElementById('teamList');
-const addTeamBtn = document.getElementById('addTeamBtn');
-const newTeamInput = document.getElementById('newTeamInput');
-
-let teams = [];
-
-async function loadTeams() {
-  try {
-    const res = await api.get('/api/teams');
-    teams = await res.json();
-    renderTeams();
-  } catch (err) {
-    console.error("Failed to load teams:", err);
-  }
-}
-
-function renderTeams() {
-  teamList.innerHTML = "";
-  teams.forEach(team => {
-    const li = document.createElement('li');
-    li.textContent = team.name;
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = 'Remove';
-    removeBtn.onclick = async () => {
-      try {
-        const res = await api.delete(`/api/teams/${encodeURIComponent(team.name)}`);
-
-        if (res.ok) {
-          loadTeams();
-        } else {
-          const data = await res.json();
-          alert(data.error || 'Failed to delete team');
-        }
-      } catch (err) {
-        console.error("Delete failed:", err);
-      }
-    };
-
-    li.appendChild(removeBtn);
-    teamList.appendChild(li);
-  });
-}
-
-if (addTeamBtn) {
-  addTeamBtn.addEventListener('click', async () => {
-    const name = newTeamInput.value.trim();
-    if (!name) return alert('Enter a team name');
-
-    try {
-      const res = await api.post('/api/teams', { name });
-
-      const data = await res.json();
-      if (!res.ok) return alert(data.error || 'Failed to add');
-
-      newTeamInput.value = '';
-      loadTeams();
-    } catch (err) {
-      console.error("Add failed:", err);
+      // Update current preview
+      updateCurrentLogoPreview();
     }
-  });
 
-  loadTeams();
-}
+    function selectLogo(logoFile) {
+      currentLogo = logoFile;
+      localStorage.setItem('teamLogo', logoFile);
 
-/* Logout */
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  if (confirm('Are you sure you want to logout?')) {
-    auth.logout('../../index.html');
-  }
-});
+      // Update selection UI
+      document.querySelectorAll('.logo-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.logo === logoFile);
+      });
 
-// Require authentication
-if (!auth.requireCoach('../auth/teacherLogin.html')) {
-  throw new Error('Not authenticated');
-}
+      updateCurrentLogoPreview();
+      showMessage('Logo updated! Changes will appear across all pages.', 'success');
+    }
+
+    function updateCurrentLogoPreview() {
+      const logo = availableLogos.find(l => l.file === currentLogo);
+      document.getElementById('currentLogoImg').src = `../../assets/images/Team Logos/${currentLogo}`;
+      document.getElementById('currentLogoName').textContent = logo ? logo.name : currentLogo;
+    }
+
+    /* ---------------------------------------------------
+       ACCENT COLOR SYSTEM
+    --------------------------------------------------- */
+    (function applySavedAccent() {
+      const saved = localStorage.getItem("accentColor");
+      if (saved) {
+        document.documentElement.style.setProperty("--accent-color", saved);
+      }
+    })();
+
+    const picker = document.getElementById("accentColorPicker");
+    if (picker) {
+      const saved = localStorage.getItem("accentColor");
+      if (saved) picker.value = saved;
+
+      picker.addEventListener("input", (e) => {
+        const color = e.target.value;
+        localStorage.setItem("accentColor", color);
+        document.documentElement.style.setProperty("--accent-color", color);
+        updatePresetSelection('accentPresets', color);
+      });
+    }
+
+    // Preset color clicks for accent
+    document.querySelectorAll('#accentPresets .preset-color').forEach(preset => {
+      preset.addEventListener('click', () => {
+        const color = preset.dataset.color;
+        picker.value = color;
+        localStorage.setItem("accentColor", color);
+        document.documentElement.style.setProperty("--accent-color", color);
+        updatePresetSelection('accentPresets', color);
+      });
+    });
+
+    /* ---------------------------------------------------
+       MAIN COLOR SYSTEM
+    --------------------------------------------------- */
+    (function applySavedMain() {
+      const saved = localStorage.getItem("mainColor");
+      if (saved) {
+        document.documentElement.style.setProperty("--main-color", saved);
+      }
+    })();
+
+    const mainPicker = document.getElementById("mainColorPicker");
+    if (mainPicker) {
+      const saved = localStorage.getItem("mainColor");
+      if (saved) mainPicker.value = saved;
+
+      mainPicker.addEventListener("input", (e) => {
+        const color = e.target.value;
+        localStorage.setItem("mainColor", color);
+        document.documentElement.style.setProperty("--main-color", color);
+        updatePresetSelection('mainPresets', color);
+      });
+    }
+
+    // Preset color clicks for main
+    document.querySelectorAll('#mainPresets .preset-color').forEach(preset => {
+      preset.addEventListener('click', () => {
+        const color = preset.dataset.color;
+        mainPicker.value = color;
+        localStorage.setItem("mainColor", color);
+        document.documentElement.style.setProperty("--main-color", color);
+        updatePresetSelection('mainPresets', color);
+      });
+    });
+
+    function updatePresetSelection(containerId, selectedColor) {
+      document.querySelectorAll(`#${containerId} .preset-color`).forEach(preset => {
+        preset.classList.toggle('selected', preset.dataset.color === selectedColor);
+      });
+    }
+
+    // Initialize preset selections
+    updatePresetSelection('accentPresets', localStorage.getItem("accentColor") || "#ffa500");
+    updatePresetSelection('mainPresets', localStorage.getItem("mainColor") || "#5f371c");
+
+    /* ---------------------------------------------------
+       LIGHT / DARK MODE
+    --------------------------------------------------- */
+    (function () {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    })();
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      const html = document.documentElement;
+      const current = html.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+
+      html.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+    });
+
+    /* ---------------------------------------------------
+       RESET BUTTONS
+    --------------------------------------------------- */
+    document.getElementById("resetAccent").addEventListener("click", () => {
+      const defaultColor = "#ffa500";
+      picker.value = defaultColor;
+      document.documentElement.style.setProperty("--accent-color", defaultColor);
+      localStorage.setItem("accentColor", defaultColor);
+      updatePresetSelection('accentPresets', defaultColor);
+    });
+
+    document.getElementById("resetMain").addEventListener("click", () => {
+      const defaultColor = "#5f371c";
+      mainPicker.value = defaultColor;
+      document.documentElement.style.setProperty("--main-color", defaultColor);
+      localStorage.setItem("mainColor", defaultColor);
+      updatePresetSelection('mainPresets', defaultColor);
+    });
+
+    /* ---------------------------------------------------
+       MESSAGE HELPER
+    --------------------------------------------------- */
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = `message ${type}`;
+      setTimeout(() => { msg.className = 'message'; }, 3000);
+    }
+
+    /* ---------------------------------------------------
+       LOGOUT
+    --------------------------------------------------- */
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        auth.logout('../../index.html');
+      }
+    });
+
+    // Require authentication
+    if (!auth.requireCoach('../auth/teacherLogin.html')) {
+      throw new Error('Not authenticated');
+    }
+
+    // Initialize
+    initLogoGrid();
   </script>
 
 </body>
