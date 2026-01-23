@@ -3,113 +3,519 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Select Season & Team Level - Strike Master</title>
-    <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
-    <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
-    <script src="../../assets/js/accent-loader.js"></script>
-    <script src="../../assets/js/auth-helper.js"></script>
-
+  <title>Home - Strike Master</title>
+  <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
+  <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
+  <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
+  <script src="../../assets/js/auth-helper.js"></script>
   <style>
-
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
     }
 
-    /* Page container */
     .container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
     }
 
-    .selection-box {
-      background: var(--card-bg);
-      padding: 40px;
-      border-radius: 16px;
-      border: 2px solid var(--accent-color);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-      max-width: 450px;
-      width: 100%;
+    .page-header {
       text-align: center;
+      padding: 30px 0;
     }
 
-    .selection-box h1 {
+    .page-header h1 {
       color: var(--accent-color);
-      font-size: 32px;
+      font-size: 36px;
       margin-bottom: 10px;
     }
 
-    .selection-box p {
+    .page-header p {
       color: var(--text-color);
-      margin-bottom: 30px;
       font-size: 16px;
+    }
+
+    /* Team Tabs */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .tab-btn {
+      padding: 12px 30px;
+      border: 2px solid var(--accent-color);
+      background: transparent;
+      color: var(--accent-color);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .tab-btn:hover {
+      opacity: 0.85;
+    }
+
+    /* Log Match Button */
+    .log-match-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto 30px auto;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    .log-match-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    /* Match Entry Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: block;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      max-width: 900px;
+      margin: 20px auto;
+      border-radius: 12px;
+      border: 2px solid var(--accent-color);
+      padding: 25px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 15px;
+    }
+
+    .modal-header h2 {
+      color: var(--accent-color);
+      margin: 0;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: var(--text-color);
+      padding: 0 10px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
     }
 
     .form-group {
-      margin-bottom: 25px;
-      text-align: left;
+      display: flex;
+      flex-direction: column;
     }
 
-    label {
+    .form-group label {
       font-weight: 600;
+      margin-bottom: 5px;
       color: var(--text-color);
-      display: block;
-      margin-bottom: 8px;
     }
 
-    select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
+    .form-group input, .form-group select {
+      padding: 10px;
       border: 1px solid #ccc;
-      font-size: 16px;
+      border-radius: 5px;
+      font-size: 14px;
       background: var(--content-bg);
       color: var(--text-color);
     }
 
-    button {
-      width: 100%;
-      padding: 14px;
-      background: var(--accent-color);
-      border: none;
-      border-radius: 10px;
-      color: var(--text-color);
-      font-size: 18px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: var(--main-color);
+    /* Player Scores Table */
+    .players-entry {
+      margin: 20px 0;
     }
 
-    /* Footer */
-    .footer {
+    .players-entry h3 {
+      color: var(--accent-color);
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+    }
+
+    thead {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    th, td {
+      padding: 12px 8px;
       text-align: center;
-      padding: 20px;
-      background: var(--main-color);
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      font-weight: 600;
+    }
+
+    .score-input {
+      width: 60px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      text-align: center;
+      background: var(--content-bg);
       color: var(--text-color);
+    }
+
+    .varsity-checkbox, .dnp-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .player-row.dnp {
+      opacity: 0.4;
+      text-decoration: line-through;
+    }
+
+    .player-name-cell {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    /* Comments */
+    .comments-section {
+      margin-top: 20px;
+    }
+
+    .comments-section label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-color);
+    }
+
+    .comments-section textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      box-sizing: border-box;
+      background: var(--content-bg);
+      color: var(--text-color);
+    }
+
+    .submit-match-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .submit-match-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Matches List */
+    .matches-section h2 {
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+
+    .match-card {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .match-header {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .match-header:hover {
+      background: rgba(0,0,0,0.03);
+    }
+
+    .match-info {
+      flex: 1;
+    }
+
+    .match-date {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .match-opponent {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .match-location {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .match-stats {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .stat-box {
+      text-align: center;
+      padding: 8px 15px;
+      background: var(--content-bg);
+      border-radius: 8px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    .result-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .result-badge.win {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .result-badge.loss {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .result-badge.tie {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .expand-icon {
+      font-size: 20px;
+      color: #888;
+      transition: transform 0.3s;
+      margin-left: 15px;
+    }
+
+    .match-card.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Match Details */
+    .match-details {
+      display: none;
+      padding: 0 20px 20px 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .match-card.expanded .match-details {
+      display: block;
+    }
+
+    .details-table {
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .details-table th {
+      background: var(--accent-color);
+      color: white;
+      padding: 10px;
+    }
+
+    .details-table td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .varsity-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #ffc107;
+      color: #000;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .team-totals {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--content-bg);
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .total-item {
+      text-align: center;
+    }
+
+    .total-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .total-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    .match-comments {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .no-matches {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+    }
+
+    .no-matches p {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .match-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .match-stats {
+        flex-wrap: wrap;
+      }
+
+      .stat-box {
+        padding: 6px 12px;
+      }
+
+      .score-input {
+        width: 50px;
+      }
     }
   </style>
 </head>
 <body>
-
   <div class="navbar">
-    <!-- Logo image that links to index.html -->
     <a href="../../index.html" class="logo">
       <img src="../../assets/images/images/phLogo.png" alt="Strike Master Logo">
     </a>
-
     <div class="nav-links">
-      <a href="teamSelector.html">Team Selector</a>
+      <a href="teamSelector.html">Home</a>
       <a href="boysRecords.html">Records</a>
       <a href="boysPlayers.html">Players</a>
       <a href="../settings/appearanceSettings.html">Settings</a>
@@ -118,52 +524,492 @@
     </div>
   </div>
 
-  <script>
-    // Require authentication
-    if (!auth.requireCoach('../auth/teacherLogin.html')) {
-      throw new Error('Not authenticated');
-    }
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      if (confirm('Are you sure you want to logout?')) {
-        auth.logout('../../index.html');
-      }
-    });
-  </script>
-
   <div class="container">
-    <div class="selection-box">
-      <h1>Select Your Season</h1>
-      <p>Choose the team level and season you want to view.</p>
+    <div class="page-header">
+      <h1>Strike Master</h1>
+      <p>Match history and performance tracking</p>
+    </div>
 
-      <form action="boysRecords.html" method="GET">
-        
-        <div class="form-group">
-          <label for="team-level">Team Level</label>
-          <select id="team-level" name="team">
-            <option value="varsity">Varsity</option>
-            <option value="jv">Junior Varsity</option>
-          </select>
+    <div class="tabs">
+      <button class="tab-btn active" data-gender="boys">Boys Team</button>
+      <button class="tab-btn" data-gender="girls">Girls Team</button>
+    </div>
+
+    <button class="log-match-btn" id="logMatchBtn">+ Log New Match</button>
+
+    <div id="message" class="message"></div>
+
+    <div class="matches-section">
+      <h2 id="sectionTitle">Boys Recent Matches</h2>
+      <div id="matchesContainer">
+        <div class="no-matches">
+          <p>No matches recorded yet.</p>
+          <p>Click "Log New Match" to add your first match!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Match Modal -->
+  <div class="modal-overlay" id="matchModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Log New Match</h2>
+        <button class="close-modal" id="closeModal">&times;</button>
+      </div>
+
+      <form id="matchForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="matchDate">Date</label>
+            <input type="date" id="matchDate" required>
+          </div>
+          <div class="form-group">
+            <label for="opponent">Opponent</label>
+            <select id="opponent" required>
+              <option value="">Select opponent...</option>
+              <option value="Bergenfield">Bergenfield</option>
+              <option value="Cliffside Park">Cliffside Park</option>
+              <option value="Demarest">Demarest</option>
+              <option value="Dumont">Dumont</option>
+              <option value="Dwight Morrow">Dwight Morrow</option>
+              <option value="Emerson">Emerson</option>
+              <option value="Fort Lee">Fort Lee</option>
+              <option value="Garfield">Garfield</option>
+              <option value="Hasbrouck Heights">Hasbrouck Heights</option>
+              <option value="Leonia">Leonia</option>
+              <option value="Lodi">Lodi</option>
+              <option value="Lyndhurst">Lyndhurst</option>
+              <option value="New Milford">New Milford</option>
+              <option value="Palisades Park">Palisades Park</option>
+              <option value="Pascack Hills">Pascack Hills</option>
+              <option value="Pascack Valley">Pascack Valley</option>
+              <option value="Ridgefield Park">Ridgefield Park</option>
+              <option value="River Dell">River Dell</option>
+              <option value="Rutherford">Rutherford</option>
+              <option value="Saddle Brook">Saddle Brook</option>
+              <option value="Tenafly">Tenafly</option>
+              <option value="Waldwick">Waldwick</option>
+              <option value="Westwood">Westwood</option>
+              <option value="Wood-Ridge">Wood-Ridge</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="e.g., Bowler City">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="season">Season</label>
-          <select id="season" name="season">
-            <option value="2025-2026">2025–2026</option>
-            <option value="2024-2025">2024–2025</option>
-            <option value="2023-2024">2023–2024</option>
-            <option value="2022-2023">2022–2023</option>
-          </select>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="result">Result</label>
+            <select id="result">
+              <option value="">Pending</option>
+              <option value="win">Win</option>
+              <option value="loss">Loss</option>
+              <option value="tie">Tie</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ourScore">Our Score</label>
+            <input type="number" id="ourScore" placeholder="Total pins">
+          </div>
+          <div class="form-group">
+            <label for="opponentScore">Opponent Score</label>
+            <input type="number" id="opponentScore" placeholder="Total pins">
+          </div>
         </div>
 
-        <button type="submit">Continue</button>
+        <div class="players-entry">
+          <h3>Player Scores</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Game 1</th>
+                <th>Game 2</th>
+                <th>Game 3</th>
+                <th>Varsity</th>
+                <th>DNP</th>
+              </tr>
+            </thead>
+            <tbody id="playersTableBody">
+              <tr><td colspan="6" style="text-align:center; color:#888;">Loading players...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="comments-section">
+          <label for="comments">Comments</label>
+          <textarea id="comments" placeholder="Add any notes about the match..."></textarea>
+        </div>
+
+        <button type="submit" class="submit-match-btn">Save Match</button>
       </form>
     </div>
   </div>
 
-  <div class="footer">
-    <p>&copy; 2025 Strike Master | Season Selection</p>
-  </div>
+  <script>
+    let currentGender = 'boys';
+    let coachId = null;
+    let players = [];
 
+    // Check authentication
+    async function checkAuth() {
+      const userData = localStorage.getItem('bowling_user');
+      if (!userData) {
+        window.location.href = '../auth/teacherLogin.html';
+        return null;
+      }
+      try {
+        const user = JSON.parse(userData);
+        coachId = user.id;
+        return user;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '../auth/teacherLogin.html';
+        return null;
+      }
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentGender = btn.dataset.gender;
+        document.getElementById('sectionTitle').textContent = 
+          currentGender === 'boys' ? 'Boys Recent Matches' : 'Girls Recent Matches';
+        loadMatches();
+        loadPlayers();
+      });
+    });
+
+    // Modal controls
+    document.getElementById('logMatchBtn').addEventListener('click', () => {
+      document.getElementById('matchModal').classList.add('active');
+      document.getElementById('matchDate').valueAsDate = new Date();
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      document.getElementById('matchModal').classList.remove('active');
+    });
+
+    document.getElementById('matchModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('matchModal')) {
+        document.getElementById('matchModal').classList.remove('active');
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('bowling_user');
+      window.location.href = '../auth/teacherLogin.html';
+    });
+
+    // Load players for the form
+    async function loadPlayers() {
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
+        
+        if (!response.ok) throw new Error('Failed to fetch players');
+        
+        players = await response.json();
+        renderPlayersTable();
+      } catch (error) {
+        console.error('Error loading players:', error);
+        document.getElementById('playersTableBody').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center; color:#dc3545;">Error loading players</td></tr>';
+      }
+    }
+
+    // Render players table in modal
+    function renderPlayersTable() {
+      const tbody = document.getElementById('playersTableBody');
+      
+      if (!players || players.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">No players found. Add players in the Players tab first.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = players.map(player => `
+        <tr class="player-row" data-player-id="${player.id}">
+          <td class="player-name-cell">${player.first_name} ${player.last_name}</td>
+          <td><input type="number" class="score-input game1" min="0" max="300" placeholder="-"></td>
+          <td><input type="number" class="score-input game2" min="0" max="300" placeholder="-"></td>
+          <td><input type="number" class="score-input game3" min="0" max="300" placeholder="-"></td>
+          <td><input type="checkbox" class="varsity-checkbox" checked></td>
+          <td><input type="checkbox" class="dnp-checkbox" onchange="toggleDNP(this)"></td>
+        </tr>
+      `).join('');
+    }
+
+    // Toggle DNP (Did Not Play)
+    function toggleDNP(checkbox) {
+      const row = checkbox.closest('tr');
+      if (checkbox.checked) {
+        row.classList.add('dnp');
+        row.querySelectorAll('.score-input').forEach(input => {
+          input.disabled = true;
+          input.value = '';
+        });
+        row.querySelector('.varsity-checkbox').disabled = true;
+        row.querySelector('.varsity-checkbox').checked = false;
+      } else {
+        row.classList.remove('dnp');
+        row.querySelectorAll('.score-input').forEach(input => input.disabled = false);
+        row.querySelector('.varsity-checkbox').disabled = false;
+      }
+    }
+
+    // Submit match form
+    document.getElementById('matchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const matchData = {
+        coachId: coachId,
+        gender: currentGender,
+        opponent: document.getElementById('opponent').value,
+        matchDate: document.getElementById('matchDate').value,
+        location: document.getElementById('location').value,
+        result: document.getElementById('result').value || null,
+        ourScore: parseInt(document.getElementById('ourScore').value) || 0,
+        opponentScore: parseInt(document.getElementById('opponentScore').value) || 0,
+        comments: document.getElementById('comments').value
+      };
+
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        
+        // Create match
+        const matchResponse = await fetch(`${API_BASE}/api/matches`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(matchData)
+        });
+
+        if (!matchResponse.ok) throw new Error('Failed to create match');
+        
+        const match = await matchResponse.json();
+
+        // Save player records
+        const rows = document.querySelectorAll('.player-row');
+        for (const row of rows) {
+          const dnp = row.querySelector('.dnp-checkbox').checked;
+          if (dnp) continue;
+
+          const playerId = row.dataset.playerId;
+          const game1 = row.querySelector('.game1').value;
+          const game2 = row.querySelector('.game2').value;
+          const game3 = row.querySelector('.game3').value;
+          const isVarsity = row.querySelector('.varsity-checkbox').checked;
+
+          // Only save if at least one score is entered
+          if (game1 || game2 || game3) {
+            await fetch(`${API_BASE}/api/records`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                matchId: match.id,
+                playerId: playerId,
+                game1: game1 ? parseInt(game1) : null,
+                game2: game2 ? parseInt(game2) : null,
+                game3: game3 ? parseInt(game3) : null,
+                isVarsity: isVarsity
+              })
+            });
+          }
+        }
+
+        showMessage('Match saved successfully!', 'success');
+        document.getElementById('matchModal').classList.remove('active');
+        document.getElementById('matchForm').reset();
+        loadMatches();
+
+      } catch (error) {
+        console.error('Error saving match:', error);
+        showMessage('Error saving match. Please try again.', 'error');
+      }
+    });
+
+    // Load matches
+    async function loadMatches() {
+      const container = document.getElementById('matchesContainer');
+      
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/matches?coachId=${coachId}&gender=${currentGender}`);
+        
+        if (!response.ok) throw new Error('Failed to fetch matches');
+        
+        const matches = await response.json();
+
+        if (!matches || matches.length === 0) {
+          container.innerHTML = `
+            <div class="no-matches">
+              <p>No matches recorded yet.</p>
+              <p>Click "Log New Match" to add your first match!</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Sort matches by date (newest first)
+        matches.sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
+
+        // Build HTML
+        let html = '';
+        for (const match of matches) {
+          // Fetch records for this match
+          let records = [];
+          try {
+            const recordsResponse = await fetch(`${API_BASE}/api/records?matchId=${match.id}`);
+            if (recordsResponse.ok) {
+              records = await recordsResponse.json();
+            }
+          } catch (err) {
+            console.error('Error fetching records:', err);
+          }
+
+          // Calculate varsity-only stats
+          const varsityRecords = records.filter(r => r.is_varsity);
+          const totalWood = varsityRecords.reduce((sum, r) => sum + (r.total || 0), 0);
+          const avgWood = varsityRecords.length > 0 ? (totalWood / varsityRecords.length).toFixed(1) : '0.0';
+
+          // Format date
+          const date = new Date(match.match_date);
+          const formattedDate = date.toLocaleDateString('en-US', { 
+            weekday: 'short',
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+
+          // Determine result
+          const result = match.result || 'pending';
+          const resultClass = result === 'win' ? 'win' : result === 'loss' ? 'loss' : 'tie';
+          const resultText = result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : result === 'tie' ? 'Tie' : 'Pending';
+
+          html += `
+            <div class="match-card" data-match-id="${match.id}">
+              <div class="match-header" onclick="toggleMatch('${match.id}')">
+                <div class="match-info">
+                  <div class="match-date">${formattedDate}</div>
+                  <div class="match-opponent">vs ${match.opponent}</div>
+                  ${match.location ? `<div class="match-location">📍 ${match.location}</div>` : ''}
+                </div>
+                <div class="match-stats">
+                  <span class="result-badge ${resultClass}">${resultText}</span>
+                  <div class="stat-box">
+                    <div class="stat-label">Final Score</div>
+                    <div class="stat-value">${match.our_score || 0} - ${match.opponent_score || 0}</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label">Total Wood</div>
+                    <div class="stat-value">${totalWood}</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label">Avg Wood</div>
+                    <div class="stat-value">${avgWood}</div>
+                  </div>
+                  <span class="expand-icon">▼</span>
+                </div>
+              </div>
+              <div class="match-details">
+                ${records.length > 0 ? `
+                  <table class="details-table">
+                    <thead>
+                      <tr>
+                        <th>Player</th>
+                        <th>Game 1</th>
+                        <th>Game 2</th>
+                        <th>Game 3</th>
+                        <th>Total</th>
+                        <th>Average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${records.map(record => {
+                        const g1 = record.game1 || 0;
+                        const g2 = record.game2 || 0;
+                        const g3 = record.game3 || 0;
+                        const total = g1 + g2 + g3;
+                        const gamesPlayed = (record.game1 ? 1 : 0) + (record.game2 ? 1 : 0) + (record.game3 ? 1 : 0);
+                        const avg = gamesPlayed > 0 ? (total / gamesPlayed).toFixed(1) : '0.0';
+                        return `
+                          <tr>
+                            <td style="text-align:left;">
+                              ${record.player_name || 'Unknown'}
+                              ${record.is_varsity ? '<span class="varsity-badge">V</span>' : ''}
+                            </td>
+                            <td>${record.game1 || '-'}</td>
+                            <td>${record.game2 || '-'}</td>
+                            <td>${record.game3 || '-'}</td>
+                            <td><strong>${total}</strong></td>
+                            <td>${avg}</td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                  <div class="team-totals">
+                    <div class="total-item">
+                      <div class="total-label">Varsity Players</div>
+                      <div class="total-value">${varsityRecords.length}</div>
+                    </div>
+                    <div class="total-item">
+                      <div class="total-label">Team Total (Varsity)</div>
+                      <div class="total-value">${totalWood}</div>
+                    </div>
+                    <div class="total-item">
+                      <div class="total-label">Team Average (Varsity)</div>
+                      <div class="total-value">${avgWood}</div>
+                    </div>
+                  </div>
+                ` : '<p style="text-align: center; color: #888; padding: 20px;">No player scores recorded</p>'}
+                ${match.comments ? `<div class="match-comments"><strong>Notes:</strong> ${match.comments}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = html;
+
+      } catch (error) {
+        console.error('Error loading matches:', error);
+        container.innerHTML = `
+          <div class="no-matches">
+            <p>Error loading matches. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Toggle match details
+    function toggleMatch(matchId) {
+      const card = document.querySelector(`[data-match-id="${matchId}"]`);
+      card.classList.toggle('expanded');
+    }
+
+    // Show message
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = `message ${type}`;
+      setTimeout(() => { msg.className = 'message'; }, 4000);
+    }
+
+    // Initialize
+    checkAuth().then(user => {
+      if (user) {
+        loadMatches();
+        loadPlayers();
+      }
+    });
+  </script>
 </body>
 </html>

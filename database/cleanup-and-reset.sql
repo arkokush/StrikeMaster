@@ -73,6 +73,7 @@ CREATE TABLE matches (
   opponent_score INTEGER DEFAULT 0,
   result VARCHAR(10) CHECK (result IN ('win', 'loss', 'tie', NULL)),
   location VARCHAR(255),
+  comments TEXT,
   is_complete BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -90,6 +91,7 @@ CREATE TABLE records (
   game2 INTEGER CHECK (game2 >= 0 AND game2 <= 300),
   game3 INTEGER CHECK (game3 >= 0 AND game3 <= 300),
   total INTEGER GENERATED ALWAYS AS (COALESCE(game1, 0) + COALESCE(game2, 0) + COALESCE(game3, 0)) STORED,
+  is_varsity BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(match_id, player_id)
 );

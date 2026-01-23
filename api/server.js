@@ -431,7 +431,7 @@ app.post('/api/matches', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { coachId, gender, opponent, matchDate, location } = req.body;
+    const { coachId, gender, opponent, matchDate, location, result, ourScore, opponentScore, comments } = req.body;
 
     if (!coachId || !gender || !opponent || !matchDate) {
       return res.status(400).json({ error: 'Required: coachId, gender, opponent, matchDate' });
@@ -445,6 +445,10 @@ app.post('/api/matches', async (req, res) => {
         opponent,
         match_date: matchDate,
         location: location || null,
+        result: result || null,
+        our_score: ourScore ? parseInt(ourScore) : 0,
+        opponent_score: opponentScore ? parseInt(opponentScore) : 0,
+        comments: comments || null,
         is_complete: false
       }])
       .select()
@@ -566,6 +570,44 @@ app.get('/api/players/:playerId/records', async (req, res) => {
   }
 });
 
+// Get records by matchId (query parameter)
+app.get('/api/records', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { matchId } = req.query;
+
+    if (!matchId) {
+      return res.status(400).json({ error: 'matchId is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('records')
+      .select(`
+        *,
+        player:players(id, first_name, last_name, gender)
+      `)
+      .eq('match_id', matchId)
+      .order('created_at');
+
+    if (error) throw error;
+
+    // Format the response to include player_name
+    const formattedData = (data || []).map(record => ({
+      ...record,
+      player_name: record.player ? `${record.player.first_name} ${record.player.last_name}` : 'Unknown Player'
+    }));
+
+    res.json(formattedData);
+
+  } catch (error) {
+    console.error('Get records error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create or update record (upsert)
 app.post('/api/records', async (req, res) => {
   try {
@@ -573,7 +615,7 @@ app.post('/api/records', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { matchId, playerId, game1, game2, game3 } = req.body;
+    const { matchId, playerId, game1, game2, game3, isVarsity } = req.body;
 
     if (!matchId || !playerId) {
       return res.status(400).json({ error: 'Required: matchId, playerId' });
@@ -584,9 +626,10 @@ app.post('/api/records', async (req, res) => {
       .upsert([{
         match_id: matchId,
         player_id: playerId,
-        game1: game1 !== undefined ? parseInt(game1) : null,
-        game2: game2 !== undefined ? parseInt(game2) : null,
-        game3: game3 !== undefined ? parseInt(game3) : null
+        game1: game1 !== undefined && game1 !== null ? parseInt(game1) : null,
+        game2: game2 !== undefined && game2 !== null ? parseInt(game2) : null,
+        game3: game3 !== undefined && game3 !== null ? parseInt(game3) : null,
+        is_varsity: isVarsity !== undefined ? isVarsity : true
       }], { onConflict: 'match_id,player_id' })
       .select()
       .single();
