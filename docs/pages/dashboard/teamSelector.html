@@ -295,6 +295,22 @@
 
     .match-info {
       flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .opponent-logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: white;
+      padding: 5px;
+    }
+
+    .match-text {
+      flex: 1;
     }
 
     .match-date {
@@ -655,6 +671,41 @@
     let coachId = null;
     let players = [];
 
+    // Team logo mapping for opponents
+    const teamLogos = {
+      'pascack hills': 'phLogo.png',
+      'pascack valley': 'pvLogo.png',
+      'pv': 'pvLogo.png',
+      'indian hills': 'ihLogo.png',
+      'ih': 'ihLogo.png',
+      'mahwah': 'mahLogo.png',
+      'ramsey': 'ramLogo.png',
+      'river dell': 'rdLogo.png',
+      'rd': 'rdLogo.png',
+      'tenafly': 'tenLogo.png',
+      'westwood': 'wwLogo.png'
+    };
+
+    // Get opponent logo
+    function getOpponentLogo(opponentName) {
+      if (!opponentName) return null;
+      const normalized = opponentName.toLowerCase().trim();
+      
+      // Check exact match first
+      if (teamLogos[normalized]) {
+        return `../../assets/images/Team Logos/${teamLogos[normalized]}`;
+      }
+      
+      // Check partial matches
+      for (const [key, logo] of Object.entries(teamLogos)) {
+        if (normalized.includes(key) || key.includes(normalized)) {
+          return `../../assets/images/Team Logos/${logo}`;
+        }
+      }
+      
+      return null;
+    }
+
     // Check authentication
     async function checkAuth() {
       const userData = localStorage.getItem('bowling_user');
@@ -894,13 +945,19 @@
           const resultClass = result === 'win' ? 'win' : result === 'loss' ? 'loss' : 'tie';
           const resultText = result === 'win' ? 'Win' : result === 'loss' ? 'Loss' : result === 'tie' ? 'Tie' : 'Pending';
 
+          // Get opponent logo
+          const opponentLogo = getOpponentLogo(match.opponent);
+
           html += `
             <div class="match-card" data-match-id="${match.id}">
               <div class="match-header" onclick="toggleMatch('${match.id}')">
                 <div class="match-info">
-                  <div class="match-date">${formattedDate}</div>
-                  <div class="match-opponent">vs ${match.opponent}</div>
-                  ${match.location ? `<div class="match-location">📍 ${match.location}</div>` : ''}
+                  ${opponentLogo ? `<img src="${opponentLogo}" alt="${match.opponent}" class="opponent-logo">` : ''}
+                  <div class="match-text">
+                    <div class="match-date">${formattedDate}</div>
+                    <div class="match-opponent">vs ${match.opponent}</div>
+                    ${match.location ? `<div class="match-location">📍 ${match.location}</div>` : ''}
+                  </div>
                 </div>
                 <div class="match-stats">
                   <span class="result-badge ${resultClass}">${resultText}</span>

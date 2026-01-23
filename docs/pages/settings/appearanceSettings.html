@@ -368,10 +368,17 @@
   </div>
 
   <script>
-    // Available team logos (add more here as needed)
+    // Available team logos with school colors
     const availableLogos = [
-      { file: 'phLogo.png', name: 'Pascack Hills' },
-      { file: 'PascackHills2.png', name: 'Pascack Hills Alt' }
+      { file: 'phLogo.png', name: 'Pascack Hills', accentColor: '#ffa500', mainColor: '#5f371c' },
+      { file: 'PascackHills2.png', name: 'Pascack Hills Alt', accentColor: '#ffa500', mainColor: '#5f371c' },
+      { file: 'pvLogo.png', name: 'Pascack Valley', accentColor: '#ffd700', mainColor: '#000000' },
+      { file: 'ihLogo.png', name: 'Indian Hills', accentColor: '#cc0000', mainColor: '#1a1a1a' },
+      { file: 'mahLogo.png', name: 'Mahwah', accentColor: '#c41e3a', mainColor: '#1c1c1c' },
+      { file: 'ramLogo.png', name: 'Ramsey', accentColor: '#006400', mainColor: '#1a1a1a' },
+      { file: 'rdLogo.png', name: 'River Dell', accentColor: '#ffd700', mainColor: '#006633' },
+      { file: 'tenLogo.png', name: 'Tenafly', accentColor: '#c8102e', mainColor: '#1e3a5f' },
+      { file: 'wwLogo.png', name: 'Westwood', accentColor: '#003087', mainColor: '#c8102e' }
     ];
 
     // Current selected logo
@@ -381,7 +388,7 @@
     function initLogoGrid() {
       const grid = document.getElementById('logoGrid');
       grid.innerHTML = availableLogos.map(logo => `
-        <div class="logo-option ${logo.file === currentLogo ? 'selected' : ''}" data-logo="${logo.file}">
+        <div class="logo-option ${logo.file === currentLogo ? 'selected' : ''}" data-logo="${logo.file}" data-accent="${logo.accentColor}" data-main="${logo.mainColor}">
           <img src="../../assets/images/Team Logos/${logo.file}" alt="${logo.name}">
           <span>${logo.name}</span>
         </div>
@@ -391,7 +398,9 @@
       grid.querySelectorAll('.logo-option').forEach(option => {
         option.addEventListener('click', () => {
           const logoFile = option.dataset.logo;
-          selectLogo(logoFile);
+          const accentColor = option.dataset.accent;
+          const mainColor = option.dataset.main;
+          selectLogo(logoFile, accentColor, mainColor);
         });
       });
 
@@ -399,7 +408,7 @@
       updateCurrentLogoPreview();
     }
 
-    function selectLogo(logoFile) {
+    function selectLogo(logoFile, accentColor, mainColor) {
       currentLogo = logoFile;
       localStorage.setItem('teamLogo', logoFile);
 
@@ -408,8 +417,22 @@
         opt.classList.toggle('selected', opt.dataset.logo === logoFile);
       });
 
+      // Apply school colors if provided
+      if (accentColor) {
+        picker.value = accentColor;
+        localStorage.setItem("accentColor", accentColor);
+        document.documentElement.style.setProperty("--accent-color", accentColor);
+        updatePresetSelection('accentPresets', accentColor);
+      }
+      if (mainColor) {
+        mainPicker.value = mainColor;
+        localStorage.setItem("mainColor", mainColor);
+        document.documentElement.style.setProperty("--main-color", mainColor);
+        updatePresetSelection('mainPresets', mainColor);
+      }
+
       updateCurrentLogoPreview();
-      showMessage('Logo updated! Changes will appear across all pages.', 'success');
+      showMessage('Logo and colors updated! Changes will appear across all pages.', 'success');
     }
 
     function updateCurrentLogoPreview() {

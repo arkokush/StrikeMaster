@@ -317,6 +317,20 @@
       border-bottom: 1px solid #eee;
     }
 
+    .opponent-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .opponent-logo-small {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
     .history-table tr:hover {
       background: rgba(0,0,0,0.02);
     }
@@ -505,6 +519,34 @@
     let selectedPlayerId = null;
     let playerRecords = [];
     let currentFilter = 'all';
+
+    // Team logo mapping for opponents
+    const teamLogos = {
+      'pascack hills': 'phLogo.png',
+      'pascack valley': 'pvLogo.png',
+      'pv': 'pvLogo.png',
+      'indian hills': 'ihLogo.png',
+      'ih': 'ihLogo.png',
+      'mahwah': 'mahLogo.png',
+      'ramsey': 'ramLogo.png',
+      'river dell': 'rdLogo.png',
+      'rd': 'rdLogo.png',
+      'tenafly': 'tenLogo.png',
+      'westwood': 'wwLogo.png'
+    };
+
+    // Get opponent logo
+    function getOpponentLogo(opponentName) {
+      if (!opponentName) return null;
+      const normalized = opponentName.toLowerCase().trim();
+      
+      for (const [key, logo] of Object.entries(teamLogos)) {
+        if (normalized.includes(key) || key.includes(normalized)) {
+          return `../../assets/images/Team Logos/${logo}`;
+        }
+      }
+      return null;
+    }
 
     // Check authentication
     async function checkAuth() {
@@ -698,10 +740,15 @@
         const gamesPlayed = (record.game1 ? 1 : 0) + (record.game2 ? 1 : 0) + (record.game3 ? 1 : 0);
         const avg = gamesPlayed > 0 ? (total / gamesPlayed).toFixed(1) : '0.0';
 
+        const opponentLogo = getOpponentLogo(match.opponent);
+        const opponentDisplay = opponentLogo 
+          ? `<div class="opponent-cell"><img src="${opponentLogo}" alt="${match.opponent}" class="opponent-logo-small">${match.opponent || 'Unknown'}</div>`
+          : (match.opponent || 'Unknown');
+
         return `
           <tr>
             <td>${date}</td>
-            <td>${match.opponent || 'Unknown'}</td>
+            <td>${opponentDisplay}</td>
             <td>${record.game1 || '-'}</td>
             <td>${record.game2 || '-'}</td>
             <td>${record.game3 || '-'}</td>
