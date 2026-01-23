@@ -5,27 +5,26 @@ import { createClient } from '@supabase/supabase-js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Check required environment variables (warn but don't crash)
+// Check required environment variables
 let supabase = null;
 if (!process.env.SUPABASE_SERVICE_KEY) {
   console.warn('WARNING: SUPABASE_SERVICE_KEY environment variable is not set!');
   console.warn('API endpoints requiring database will not work.');
 } else {
-  // Supabase client (server-side with service key)
   supabase = createClient(
     process.env.SUPABASE_URL || 'https://fxqddamrgadttkfxvjth.supabase.co',
     process.env.SUPABASE_SERVICE_KEY
   );
 }
 
-// CORS - allow GitHub Pages to call this API
+// CORS - allow GitHub Pages and local development
 app.use(cors({
   origin: [
     'https://arkokush.github.io',
     'https://maxklinchik.github.io',
     'http://localhost:8080',
     'http://localhost:3000',
-    'http://127.0.0.1:5500',  // VS Code Live Server
+    'http://127.0.0.1:5500',
     'http://localhost:5500'
   ],
   credentials: true
@@ -33,121 +32,46 @@ app.use(cors({
 
 app.use(express.json());
 
-// Health check
+// ==================== HEALTH CHECK ====================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    database: supabase ? 'connected' : 'not configured'
+  });
 });
 
 // ==================== AUTH ENDPOINTS ====================
 
-// Sign up
+// Coach Sign Up - Creates user with team code
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role } = req.body;
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, password, firstName, lastName, teamName } = req.body;
     
+    if (!email || !password || !firstName || !lastName || !teamName) {
+      return res.status(400).json({ error: 'All fields required: email, password, firstName, lastName, teamName' });
+    }
+
+    // Generate unique 6-character team code
+    const teamCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    // Create auth user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true
     });
 
-    if (authError) throw authError;
-
-    // Create user profile
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert([{
-        id: authData.user.id,
-        email,
-        first_name: firstName,
-        last_name: lastName,
-        role: role || 'student'
-      }]);
-
-    if (profileError) throw profileError;
-
-    res.json({ success: true, user: authData.user });
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Login
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-
-    // Fetch full user profile from users table
-    const { data: userProfile, error: profileError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
-
-    if (profileError) {
-      console.warn('Could not fetch user profile:', profileError.message);
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw authError;
     }
 
-    // Merge auth user with profile data
-    const fullUser = {
-      id: data.user.id,
-      email: data.user.email,
-      ...(userProfile || {}),
-    };
-
-    res.json({ 
-      success: true, 
-      session: data.session,
-      user: fullUser 
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(401).json({ error: error.message });
-  }
-});
-
-// Coach/Director Sign Up (generates unique coach code)
-app.post('/api/auth/signup-coach', async (req, res) => {
-  try {
-    const { firstName, lastName, email, password, school } = req.body;
-    
-    if (!firstName || !lastName || !email || !password || !school) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-    
-    // Generate unique coach code (6 alphanumeric characters)
-    const coachCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true
-    });
-
-    if (authError) throw authError;
-
-    // Look up school_id (or use default for now)
-    let schoolId = null;
-    const { data: schoolData } = await supabase
-      .from('schools')
-      .select('id')
-      .eq('name', school)
-      .single();
-    
-    if (schoolData) {
-      schoolId = schoolData.id;
-    }
-
-    // Create user profile with coach code
+    // Create user profile in users table
     const { data: userData, error: profileError } = await supabase
       .from('users')
       .insert([{
@@ -155,93 +79,132 @@ app.post('/api/auth/signup-coach', async (req, res) => {
         email,
         first_name: firstName,
         last_name: lastName,
-        role: 'coach',
-        coach_code: coachCode,
-        school_id: schoolId
+        team_name: teamName,
+        team_code: teamCode
       }])
       .select()
       .single();
 
-    if (profileError) throw profileError;
-
-    // Auto-create teams for this coach (boys and girls)
-    const teamInserts = [
-      { name: `${school} Boys Bowling`, gender: 'boys', school_name: school, director_id: authData.user.id },
-      { name: `${school} Girls Bowling`, gender: 'girls', school_name: school, director_id: authData.user.id }
-    ];
-    
-    const { data: teamsData, error: teamsError } = await supabase
-      .from('teams')
-      .insert(teamInserts)
-      .select();
-    
-    if (teamsError) {
-      console.warn('Could not auto-create teams:', teamsError.message);
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      // Try to clean up auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw profileError;
     }
 
-    // Generate session token
-    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+    // Sign in to get session
+    const { data: sessionData } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    res.json({ 
+    res.json({
       success: true,
-      token: sessionData?.session?.access_token,
-      user: {
-        ...userData,
-        coach_code: coachCode
-      },
-      teams: teamsData || []
+      user: userData,
+      token: sessionData?.session?.access_token
     });
+
   } catch (error) {
-    console.error('Coach signup error:', error);
-    res.status(400).json({ message: error.message });
+    console.error('Signup error:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 
-// Student Sign In with Coach Code
-app.post('/api/auth/signin-code', async (req, res) => {
+// Coach Login
+app.post('/api/auth/login', async (req, res) => {
   try {
-    const { coachCode } = req.body;
-    
-    if (!coachCode) {
-      return res.status(400).json({ message: 'Coach code is required' });
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
     }
 
-    // Find coach by code
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    // Sign in with Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) {
+      console.warn('Could not fetch profile:', profileError.message);
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        ...userProfile
+      },
+      token: data.session?.access_token
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ error: error.message });
+  }
+});
+
+// Student Sign In with Team Code
+app.post('/api/auth/student-login', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { teamCode } = req.body;
+
+    if (!teamCode) {
+      return res.status(400).json({ error: 'Team code required' });
+    }
+
+    // Find coach by team code
     const { data: coach, error: coachError } = await supabase
       .from('users')
       .select('*')
-      .eq('coach_code', coachCode.toUpperCase())
+      .eq('team_code', teamCode.toUpperCase())
       .single();
 
     if (coachError || !coach) {
-      return res.status(404).json({ message: 'Invalid coach code' });
+      return res.status(404).json({ error: 'Invalid team code' });
     }
 
-    // Generate a simple token for student access (view-only)
-    const studentToken = `student_${coachCode}_${Date.now()}`;
-
-    res.json({ 
+    res.json({
       success: true,
-      token: studentToken,
       coach: {
         id: coach.id,
         name: `${coach.first_name} ${coach.last_name}`.trim(),
-        email: coach.email
+        team_name: coach.team_name
       },
       accessLevel: 'student'
     });
+
   } catch (error) {
-    console.error('Student signin error:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Student login error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 // Get user profile
 app.get('/api/auth/profile/:userId', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -256,127 +219,58 @@ app.get('/api/auth/profile/:userId', async (req, res) => {
   }
 });
 
-// ==================== TEAMS ENDPOINTS ====================
+// ==================== PLAYERS ENDPOINTS ====================
 
-// Get all teams
-app.get('/api/teams', async (req, res) => {
+// Get all players for a coach (filtered by gender)
+app.get('/api/players', async (req, res) => {
   try {
-    const { gender } = req.query;
-    let query = supabase.from('teams').select('*').order('name');
-    
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId, gender } = req.query;
+
+    if (!coachId) {
+      return res.status(400).json({ error: 'coachId is required' });
+    }
+
+    let query = supabase
+      .from('players')
+      .select('*')
+      .eq('coach_id', coachId)
+      .eq('is_active', true)
+      .order('last_name');
+
     if (gender) {
       query = query.eq('gender', gender);
     }
 
     const { data, error } = await query;
     if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Get teams error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+    res.json(data || []);
 
-// Get team by ID
-app.get('/api/teams/:id', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('teams')
-      .select('*, players(*)')
-      .eq('id', req.params.id)
-      .single();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Get team error:', error);
-    res.status(404).json({ error: error.message });
-  }
-});
-
-// Create team
-app.post('/api/teams', async (req, res) => {
-  try {
-    const { name, gender, schoolName, division, county, directorId } = req.body;
-    
-    const { data, error } = await supabase
-      .from('teams')
-      .insert([{
-        name,
-        gender,
-        school_name: schoolName,
-        division,
-        county,
-        director_id: directorId
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Create team error:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Update team
-app.put('/api/teams/:id', async (req, res) => {
-  try {
-    const { name, gender, schoolName, division, county } = req.body;
-    
-    const { data, error } = await supabase
-      .from('teams')
-      .update({
-        name,
-        gender,
-        school_name: schoolName,
-        division,
-        county
-      })
-      .eq('id', req.params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Update team error:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// ==================== PLAYERS ENDPOINTS ====================
-
-// Get team players
-app.get('/api/teams/:teamId/players', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('players')
-      .select('*')
-      .eq('team_id', req.params.teamId)
-      .eq('is_active', true)
-      .order('last_name');
-
-    if (error) throw error;
-    res.json(data);
   } catch (error) {
     console.error('Get players error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get player by ID
+// Get single player
 app.get('/api/players/:id', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
       .from('players')
-      .select('*, teams(*)')
+      .select('*')
       .eq('id', req.params.id)
       .single();
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
     console.error('Get player error:', error);
     res.status(404).json({ error: error.message });
@@ -386,21 +280,24 @@ app.get('/api/players/:id', async (req, res) => {
 // Create player
 app.post('/api/players', async (req, res) => {
   try {
-    const { teamId, firstName, lastName, gradYear, gender, email } = req.body;
-    
-    if (!teamId || !firstName || !lastName || !gradYear || !gender) {
-      return res.status(400).json({ error: 'Required fields: teamId, firstName, lastName, gradYear, gender' });
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
     }
-    
+
+    const { coachId, firstName, lastName, gender, gradYear } = req.body;
+
+    if (!coachId || !firstName || !lastName || !gender) {
+      return res.status(400).json({ error: 'Required: coachId, firstName, lastName, gender' });
+    }
+
     const { data, error } = await supabase
       .from('players')
       .insert([{
-        team_id: teamId,
+        coach_id: coachId,
         first_name: firstName,
         last_name: lastName,
-        grad_year: parseInt(gradYear),
-        gender: gender,
-        email: email || null,
+        gender,
+        grad_year: gradYear ? parseInt(gradYear) : null,
         is_active: true
       }])
       .select()
@@ -408,92 +305,27 @@ app.post('/api/players', async (req, res) => {
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
     console.error('Create player error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get coach's teams (auto-creates teams if none exist)
-app.get('/api/coach/:coachId/teams', async (req, res) => {
-  try {
-    const coachId = req.params.coachId;
-    
-    // First try to get existing teams
-    let { data: teams, error } = await supabase
-      .from('teams')
-      .select('*')
-      .eq('director_id', coachId);
-
-    if (error) throw error;
-    
-    // If no teams exist, create them automatically
-    if (!teams || teams.length === 0) {
-      console.log('No teams found for coach, creating default teams...');
-      
-      // Get the coach's info to determine school
-      const { data: coach, error: coachError } = await supabase
-        .from('users')
-        .select('*, schools(name)')
-        .eq('id', coachId)
-        .single();
-      
-      const schoolName = coach?.schools?.name || 'Pascack Hills';
-      
-      // Create boys and girls teams
-      const teamInserts = [
-        { name: schoolName + ' Boys Bowling', gender: 'boys', school_name: schoolName, director_id: coachId },
-        { name: schoolName + ' Girls Bowling', gender: 'girls', school_name: schoolName, director_id: coachId }
-      ];
-      
-      const { data: newTeams, error: insertError } = await supabase
-        .from('teams')
-        .insert(teamInserts)
-        .select();
-      
-      if (insertError) {
-        console.error('Failed to create teams:', insertError);
-        throw insertError;
-      }
-      
-      console.log('Created teams:', newTeams);
-      teams = newTeams;
-    }
-
-    res.json(teams || []);
-  } catch (error) {
-    console.error('Get coach teams error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get player scores
-app.get('/api/players/:playerId/scores', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('player_scores')
-      .select('*')
-      .eq('player_id', req.params.playerId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    res.json(data || []);
-  } catch (error) {
-    console.error('Get player scores error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Update player
 app.put('/api/players/:id', async (req, res) => {
   try {
-    const { firstName, lastName, grade, jerseyNumber, isActive } = req.body;
-    
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { firstName, lastName, gender, gradYear, isActive } = req.body;
+
     const updateData = {};
     if (firstName !== undefined) updateData.first_name = firstName;
     if (lastName !== undefined) updateData.last_name = lastName;
-    if (grade !== undefined) updateData.grade = grade;
-    if (jerseyNumber !== undefined) updateData.jersey_number = jerseyNumber;
+    if (gender !== undefined) updateData.gender = gender;
+    if (gradYear !== undefined) updateData.grad_year = parseInt(gradYear);
     if (isActive !== undefined) updateData.is_active = isActive;
 
     const { data, error } = await supabase
@@ -505,15 +337,20 @@ app.put('/api/players/:id', async (req, res) => {
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
     console.error('Update player error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// Delete player (soft delete - sets is_active to false)
+// Delete player (soft delete)
 app.delete('/api/players/:id', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
       .from('players')
       .update({ is_active: false })
@@ -523,6 +360,7 @@ app.delete('/api/players/:id', async (req, res) => {
 
     if (error) throw error;
     res.json({ success: true, message: 'Player removed' });
+
   } catch (error) {
     console.error('Delete player error:', error);
     res.status(400).json({ error: error.message });
@@ -531,47 +369,55 @@ app.delete('/api/players/:id', async (req, res) => {
 
 // ==================== MATCHES ENDPOINTS ====================
 
-// Get all matches
+// Get all matches for a coach
 app.get('/api/matches', async (req, res) => {
   try {
-    const { teamId } = req.query;
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId, gender } = req.query;
+
+    if (!coachId) {
+      return res.status(400).json({ error: 'coachId is required' });
+    }
+
     let query = supabase
       .from('matches')
-      .select(`
-        *,
-        home_team:teams!matches_home_team_id_fkey(id, name, gender),
-        away_team:teams!matches_away_team_id_fkey(id, name, gender)
-      `)
+      .select('*')
+      .eq('coach_id', coachId)
       .order('match_date', { ascending: false });
 
-    if (teamId) {
-      query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
+    if (gender) {
+      query = query.eq('gender', gender);
     }
 
     const { data, error } = await query;
     if (error) throw error;
-    res.json(data);
+    res.json(data || []);
+
   } catch (error) {
     console.error('Get matches error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get match by ID
+// Get single match
 app.get('/api/matches/:id', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
       .from('matches')
-      .select(`
-        *,
-        home_team:teams!matches_home_team_id_fkey(id, name, gender),
-        away_team:teams!matches_away_team_id_fkey(id, name, gender)
-      `)
+      .select('*')
       .eq('id', req.params.id)
       .single();
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
     console.error('Get match error:', error);
     res.status(404).json({ error: error.message });
@@ -581,231 +427,372 @@ app.get('/api/matches/:id', async (req, res) => {
 // Create match
 app.post('/api/matches', async (req, res) => {
   try {
-    const { homeTeamId, awayTeamId, matchDate, location } = req.body;
-    
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId, gender, opponent, matchDate, location } = req.body;
+
+    if (!coachId || !gender || !opponent || !matchDate) {
+      return res.status(400).json({ error: 'Required: coachId, gender, opponent, matchDate' });
+    }
+
     const { data, error } = await supabase
       .from('matches')
       .insert([{
-        home_team_id: homeTeamId,
-        away_team_id: awayTeamId,
+        coach_id: coachId,
+        gender,
+        opponent,
         match_date: matchDate,
-        location,
-        status: 'scheduled'
+        location: location || null,
+        is_complete: false
       }])
       .select()
       .single();
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
     console.error('Create match error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// Update match status
-app.put('/api/matches/:id/status', async (req, res) => {
+// Update match (scores, result)
+app.put('/api/matches/:id', async (req, res) => {
   try {
-    const { status } = req.body;
-    
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { opponent, matchDate, location, ourScore, opponentScore, result, isComplete } = req.body;
+
+    const updateData = {};
+    if (opponent !== undefined) updateData.opponent = opponent;
+    if (matchDate !== undefined) updateData.match_date = matchDate;
+    if (location !== undefined) updateData.location = location;
+    if (ourScore !== undefined) updateData.our_score = parseInt(ourScore);
+    if (opponentScore !== undefined) updateData.opponent_score = parseInt(opponentScore);
+    if (result !== undefined) updateData.result = result;
+    if (isComplete !== undefined) updateData.is_complete = isComplete;
+
     const { data, error } = await supabase
       .from('matches')
-      .update({ status })
+      .update(updateData)
       .eq('id', req.params.id)
       .select()
       .single();
 
     if (error) throw error;
     res.json(data);
+
   } catch (error) {
-    console.error('Update match status error:', error);
+    console.error('Update match error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// ==================== SCORES ENDPOINTS ====================
-
-// Submit player score for a game
-app.post('/api/scores', async (req, res) => {
+// Delete match
+app.delete('/api/matches/:id', async (req, res) => {
   try {
-    const { matchId, playerId, gameNumber, score, woodCount, strikes, spares } = req.body;
-    
-    const { data, error } = await supabase
-      .from('player_scores')
-      .upsert([{
-        match_id: matchId,
-        player_id: playerId,
-        game_number: gameNumber,
-        score,
-        wood_count: woodCount,
-        strikes: strikes || 0,
-        spares: spares || 0
-      }], { onConflict: 'match_id,player_id,game_number' })
-      .select()
-      .single();
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', req.params.id);
 
     if (error) throw error;
+    res.json({ success: true, message: 'Match deleted' });
 
-    // Auto-update summary if all 3 games are submitted
-    await updatePlayerSummary(matchId, playerId);
-
-    res.json(data);
   } catch (error) {
-    console.error('Submit score error:', error);
+    console.error('Delete match error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get match scores
-app.get('/api/matches/:matchId/scores', async (req, res) => {
+// ==================== RECORDS ENDPOINTS ====================
+
+// Get all records for a match
+app.get('/api/matches/:matchId/records', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
-      .from('player_scores')
+      .from('records')
       .select(`
         *,
-        player:players(id, first_name, last_name, team_id, teams(name))
+        player:players(id, first_name, last_name, gender)
       `)
       .eq('match_id', req.params.matchId)
-      .order('player_id')
-      .order('game_number');
+      .order('created_at');
 
     if (error) throw error;
-    res.json(data);
+    res.json(data || []);
+
   } catch (error) {
-    console.error('Get match scores error:', error);
+    console.error('Get records error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get player season stats
-app.get('/api/players/:playerId/stats', async (req, res) => {
+// Get all records for a player (their history)
+app.get('/api/players/:playerId/records', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     const { data, error } = await supabase
-      .from('player_match_summary')
-      .select('*')
+      .from('records')
+      .select(`
+        *,
+        match:matches(id, opponent, match_date, gender)
+      `)
       .eq('player_id', req.params.playerId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
-    // Calculate totals
-    const stats = {
-      matches_played: data.length,
-      total_score: data.reduce((sum, m) => sum + m.total_score, 0),
-      total_wood: data.reduce((sum, m) => sum + m.total_wood, 0),
-      average_score: data.length > 0 
-        ? (data.reduce((sum, m) => sum + m.average_score, 0) / data.length).toFixed(2)
-        : 0,
-      high_game: Math.max(...data.map(m => m.high_game), 0),
-      matches: data
-    };
+    res.json(data || []);
 
-    res.json(stats);
+  } catch (error) {
+    console.error('Get player records error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create or update record (upsert)
+app.post('/api/records', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { matchId, playerId, game1, game2, game3 } = req.body;
+
+    if (!matchId || !playerId) {
+      return res.status(400).json({ error: 'Required: matchId, playerId' });
+    }
+
+    const { data, error } = await supabase
+      .from('records')
+      .upsert([{
+        match_id: matchId,
+        player_id: playerId,
+        game1: game1 !== undefined ? parseInt(game1) : null,
+        game2: game2 !== undefined ? parseInt(game2) : null,
+        game3: game3 !== undefined ? parseInt(game3) : null
+      }], { onConflict: 'match_id,player_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+
+  } catch (error) {
+    console.error('Create record error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update record
+app.put('/api/records/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { game1, game2, game3 } = req.body;
+
+    const updateData = {};
+    if (game1 !== undefined) updateData.game1 = parseInt(game1);
+    if (game2 !== undefined) updateData.game2 = parseInt(game2);
+    if (game3 !== undefined) updateData.game3 = parseInt(game3);
+
+    const { data, error } = await supabase
+      .from('records')
+      .update(updateData)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+
+  } catch (error) {
+    console.error('Update record error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete record
+app.delete('/api/records/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { error } = await supabase
+      .from('records')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Record deleted' });
+
+  } catch (error) {
+    console.error('Delete record error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==================== STATS ENDPOINTS ====================
+
+// Get player stats (aggregated from records)
+app.get('/api/players/:playerId/stats', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    // Get all records for this player
+    const { data: records, error } = await supabase
+      .from('records')
+      .select(`
+        *,
+        match:matches(opponent, match_date)
+      `)
+      .eq('player_id', req.params.playerId);
+
+    if (error) throw error;
+
+    if (!records || records.length === 0) {
+      return res.json({
+        matches_played: 0,
+        total_pins: 0,
+        average: 0,
+        high_game: 0,
+        high_series: 0,
+        records: []
+      });
+    }
+
+    // Calculate stats
+    let totalPins = 0;
+    let totalGames = 0;
+    let highGame = 0;
+    let highSeries = 0;
+
+    records.forEach(r => {
+      const series = (r.game1 || 0) + (r.game2 || 0) + (r.game3 || 0);
+      totalPins += series;
+      
+      if (r.game1) { totalGames++; highGame = Math.max(highGame, r.game1); }
+      if (r.game2) { totalGames++; highGame = Math.max(highGame, r.game2); }
+      if (r.game3) { totalGames++; highGame = Math.max(highGame, r.game3); }
+      
+      highSeries = Math.max(highSeries, series);
+    });
+
+    res.json({
+      matches_played: records.length,
+      total_pins: totalPins,
+      average: totalGames > 0 ? (totalPins / totalGames).toFixed(1) : 0,
+      high_game: highGame,
+      high_series: highSeries,
+      records
+    });
+
   } catch (error) {
     console.error('Get player stats error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get rankings
-app.get('/api/rankings', async (req, res) => {
+// Get team stats (all players for a coach)
+app.get('/api/stats/team', async (req, res) => {
   try {
-    const { gender, county, division } = req.query;
-    
-    // Get all player summaries with aggregated stats
-    const { data: summaries, error } = await supabase
-      .from('player_match_summary')
-      .select(`
-        player_id,
-        players(first_name, last_name, teams(name, gender, county, division))
-      `);
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
 
-    if (error) throw error;
+    const { coachId, gender } = req.query;
 
-    // Group by player and calculate totals
-    const playerStats = {};
-    summaries.forEach(summary => {
-      const playerId = summary.player_id;
-      if (!playerStats[playerId]) {
-        playerStats[playerId] = {
-          player: summary.players,
-          total_wood: 0,
-          matches: 0
-        };
-      }
-      playerStats[playerId].total_wood += summary.total_wood || 0;
-      playerStats[playerId].matches += 1;
+    if (!coachId) {
+      return res.status(400).json({ error: 'coachId is required' });
+    }
+
+    // Get all players for this coach
+    let playersQuery = supabase
+      .from('players')
+      .select('id, first_name, last_name, gender')
+      .eq('coach_id', coachId)
+      .eq('is_active', true);
+
+    if (gender) {
+      playersQuery = playersQuery.eq('gender', gender);
+    }
+
+    const { data: players, error: playersError } = await playersQuery;
+    if (playersError) throw playersError;
+
+    if (!players || players.length === 0) {
+      return res.json([]);
+    }
+
+    // Get records for all these players
+    const playerIds = players.map(p => p.id);
+    const { data: records, error: recordsError } = await supabase
+      .from('records')
+      .select('*')
+      .in('player_id', playerIds);
+
+    if (recordsError) throw recordsError;
+
+    // Calculate stats per player
+    const stats = players.map(player => {
+      const playerRecords = (records || []).filter(r => r.player_id === player.id);
+      
+      let totalPins = 0;
+      let totalGames = 0;
+      let highGame = 0;
+
+      playerRecords.forEach(r => {
+        if (r.game1) { totalPins += r.game1; totalGames++; highGame = Math.max(highGame, r.game1); }
+        if (r.game2) { totalPins += r.game2; totalGames++; highGame = Math.max(highGame, r.game2); }
+        if (r.game3) { totalPins += r.game3; totalGames++; highGame = Math.max(highGame, r.game3); }
+      });
+
+      return {
+        player_id: player.id,
+        first_name: player.first_name,
+        last_name: player.last_name,
+        gender: player.gender,
+        matches_played: playerRecords.length,
+        total_pins: totalPins,
+        average: totalGames > 0 ? (totalPins / totalGames).toFixed(1) : 0,
+        high_game: highGame
+      };
     });
 
-    // Convert to array and filter
-    let rankings = Object.entries(playerStats).map(([id, stats]) => ({
-      player_id: id,
-      first_name: stats.player.first_name,
-      last_name: stats.player.last_name,
-      team: stats.player.teams.name,
-      gender: stats.player.teams.gender,
-      county: stats.player.teams.county,
-      division: stats.player.teams.division,
-      total_wood: stats.total_wood,
-      matches_played: stats.matches
-    }));
+    // Sort by average descending
+    stats.sort((a, b) => parseFloat(b.average) - parseFloat(a.average));
 
-    // Apply filters
-    if (gender) rankings = rankings.filter(r => r.gender === gender);
-    if (county) rankings = rankings.filter(r => r.county === county);
-    if (division) rankings = rankings.filter(r => r.division === division);
+    res.json(stats);
 
-    // Sort by total wood
-    rankings.sort((a, b) => b.total_wood - a.total_wood);
-
-    res.json(rankings);
   } catch (error) {
-    console.error('Get rankings error:', error);
+    console.error('Get team stats error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ==================== HELPER FUNCTIONS ====================
-
-async function updatePlayerSummary(matchId, playerId) {
-  try {
-    // Get all scores for this player in this match
-    const { data: scores, error: scoresError } = await supabase
-      .from('player_scores')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('player_id', playerId);
-
-    if (scoresError || scores.length === 0) return;
-
-    // Calculate summary
-    const totalScore = scores.reduce((sum, s) => sum + s.score, 0);
-    const totalWood = scores.reduce((sum, s) => sum + s.wood_count, 0);
-    const highGame = Math.max(...scores.map(s => s.score));
-    const averageScore = totalScore / scores.length;
-    const strikes = scores.reduce((sum, s) => sum + (s.strikes || 0), 0);
-    const spares = scores.reduce((sum, s) => sum + (s.spares || 0), 0);
-
-    // Upsert summary
-    await supabase
-      .from('player_match_summary')
-      .upsert([{
-        match_id: matchId,
-        player_id: playerId,
-        total_score: totalScore,
-        total_wood: totalWood,
-        average_score: averageScore,
-        high_game: highGame,
-        strikes,
-        spares
-      }], { onConflict: 'match_id,player_id' });
-  } catch (error) {
-    console.error('Update summary error:', error);
-  }
-}
-
 // ==================== START SERVER ====================
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎳 Strike Master API running on port ${PORT}`);
+  console.log(`Database: ${supabase ? 'Connected' : 'Not configured'}`);
 });

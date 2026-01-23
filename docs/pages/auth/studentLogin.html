@@ -72,10 +72,12 @@
       const msgEl = document.getElementById('message');
       msgEl.textContent = '';
       try {
-        const res = await api.post('/api/auth/signin-code', { coachCode: code });
+        const res = await api.post('/api/auth/student-login', { teamCode: code });
         const data = await res.json();
-        if (!res.ok) { msgEl.textContent = data.message || 'Sign-in failed'; msgEl.style.color = 'red'; return; }
-        if (data.token) localStorage.setItem('bowling_token', data.token);
+        if (!res.ok) { msgEl.textContent = data.error || 'Sign-in failed'; msgEl.style.color = 'red'; return; }
+        // Store coach info for student access
+        localStorage.setItem('bowling_student', JSON.stringify(data.coach));
+        localStorage.setItem('bowling_access', 'student');
         msgEl.textContent = 'Signed in — redirecting...'; msgEl.style.color = 'green';
         setTimeout(() => window.location.href = '../dashboard/teamSelector.html', 700);
       } catch (err) { console.error(err); msgEl.textContent = 'Network error'; msgEl.style.color = 'red'; }

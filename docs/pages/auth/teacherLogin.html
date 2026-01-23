@@ -55,8 +55,8 @@
         }
         
         // Store session info
-        if (data.session?.access_token) {
-          localStorage.setItem('bowling_token', data.session.access_token);
+        if (data.token) {
+          localStorage.setItem('bowling_token', data.token);
           console.log('Token stored');
         }
         if (data.user) {

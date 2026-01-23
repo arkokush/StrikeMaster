@@ -1,202 +1,121 @@
 -- =====================================================
--- STRIKE MASTER DATABASE SCHEMA
+-- STRIKE MASTER DATABASE SCHEMA (SIMPLIFIED)
 -- Run this in Supabase SQL Editor
+-- This replaces the old schema completely
 -- =====================================================
 
--- 1. SCHOOLS TABLE
-CREATE TABLE IF NOT EXISTS schools (
+-- Drop existing tables if they exist (in correct order due to foreign keys)
+DROP TABLE IF EXISTS records CASCADE;
+DROP TABLE IF EXISTS matches CASCADE;
+DROP TABLE IF EXISTS players CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS player_scores CASCADE;
+DROP TABLE IF EXISTS player_match_summary CASCADE;
+DROP TABLE IF EXISTS teams CASCADE;
+DROP TABLE IF EXISTS opponents CASCADE;
+DROP TABLE IF EXISTS schools CASCADE;
+
+-- =====================================================
+-- 1. USERS TABLE (Coach logins, team codes, team names)
+-- =====================================================
+CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Insert Pascack Hills as the only school for now
-INSERT INTO schools (name) VALUES ('Pascack Hills') ON CONFLICT (name) DO NOTHING;
-
--- 2. DROP existing constraints if they exist (to recreate cleanly)
-ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS users_role_check;
-
--- 3. USERS TABLE (coaches/directors)
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
   first_name VARCHAR(100),
   last_name VARCHAR(100),
-  role VARCHAR(50) DEFAULT 'coach',
-  school_id UUID REFERENCES schools(id),
-  coach_code VARCHAR(10) UNIQUE,
+  team_name VARCHAR(255),           -- e.g., "Pascack Hills"
+  team_code VARCHAR(10) UNIQUE,     -- 6-char code for students to join
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add columns if they don't exist (safe migration)
-DO $$
-BEGIN
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES schools(id);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
+-- Index for fast team code lookups
+CREATE INDEX idx_users_team_code ON users(team_code);
 
-DO $$
-BEGIN
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_code VARCHAR(10);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
--- 4. TEAMS TABLE (boys/girls teams per school)
-CREATE TABLE IF NOT EXISTS teams (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  gender VARCHAR(10) CHECK (gender IN ('boys', 'girls')),
-  school_name VARCHAR(255),
-  school_id UUID REFERENCES schools(id),
-  director_id UUID REFERENCES users(id),
-  division VARCHAR(100),
-  county VARCHAR(100),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Add columns if they don't exist (safe migration)
-DO $$
-BEGIN
-  ALTER TABLE teams ADD COLUMN IF NOT EXISTS director_id UUID REFERENCES users(id);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE teams ADD COLUMN IF NOT EXISTS school_name VARCHAR(255);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
--- 5. PLAYERS TABLE
-CREATE TABLE IF NOT EXISTS players (
+-- =====================================================
+-- 2. PLAYERS TABLE (Players with gender, name, team)
+-- =====================================================
+CREATE TABLE players (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
-  gender VARCHAR(10) CHECK (gender IN ('boys', 'girls')),
+  gender VARCHAR(10) NOT NULL CHECK (gender IN ('boys', 'girls')),
   grad_year INTEGER,
-  email VARCHAR(255),
-  team_id UUID REFERENCES teams(id),
+  coach_id UUID REFERENCES users(id) ON DELETE CASCADE,  -- Links to coach's user account
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add columns if they don't exist (safe migration)
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
+-- Index for fast player lookups by coach
+CREATE INDEX idx_players_coach ON players(coach_id);
+CREATE INDEX idx_players_gender ON players(gender);
 
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS gender VARCHAR(10);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS grad_year INTEGER;
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS email VARCHAR(255);
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE players ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
-EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
--- 6. OPPONENTS TABLE (other teams you play against)
-CREATE TABLE IF NOT EXISTS opponents (
+-- =====================================================
+-- 3. MATCHES TABLE (Opponent, final score, win/loss)
+-- =====================================================
+CREATE TABLE matches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 7. MATCHES TABLE (games/events)
-CREATE TABLE IF NOT EXISTS matches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  home_team_id UUID REFERENCES teams(id),
-  away_team_id UUID REFERENCES teams(id),
-  opponent_id UUID REFERENCES opponents(id),
+  coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  gender VARCHAR(10) NOT NULL CHECK (gender IN ('boys', 'girls')),
+  opponent VARCHAR(255) NOT NULL,
   match_date DATE NOT NULL,
+  our_score INTEGER DEFAULT 0,
+  opponent_score INTEGER DEFAULT 0,
+  result VARCHAR(10) CHECK (result IN ('win', 'loss', 'tie', NULL)),
   location VARCHAR(255),
-  home_score INTEGER DEFAULT 0,
-  away_score INTEGER DEFAULT 0,
   is_complete BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 8. PLAYER_SCORES TABLE (individual game scores)
-CREATE TABLE IF NOT EXISTS player_scores (
+-- Indexes for match lookups
+CREATE INDEX idx_matches_coach ON matches(coach_id);
+CREATE INDEX idx_matches_gender ON matches(gender);
+CREATE INDEX idx_matches_date ON matches(match_date);
+
+-- =====================================================
+-- 4. RECORDS TABLE (Player game scores per match)
+-- =====================================================
+CREATE TABLE records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
   player_id UUID REFERENCES players(id) ON DELETE CASCADE,
-  game_number INTEGER CHECK (game_number IN (1, 2, 3)),
-  score INTEGER CHECK (score >= 0 AND score <= 300),
+  game1 INTEGER CHECK (game1 >= 0 AND game1 <= 300),
+  game2 INTEGER CHECK (game2 >= 0 AND game2 <= 300),
+  game3 INTEGER CHECK (game3 >= 0 AND game3 <= 300),
+  total INTEGER GENERATED ALWAYS AS (COALESCE(game1, 0) + COALESCE(game2, 0) + COALESCE(game3, 0)) STORED,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(match_id, player_id, game_number)
+  UNIQUE(match_id, player_id)  -- One record per player per match
 );
 
--- 9. Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_players_team ON players(team_id);
-CREATE INDEX IF NOT EXISTS idx_matches_home_team ON matches(home_team_id);
-CREATE INDEX IF NOT EXISTS idx_matches_away_team ON matches(away_team_id);
-CREATE INDEX IF NOT EXISTS idx_scores_match ON player_scores(match_id);
-CREATE INDEX IF NOT EXISTS idx_scores_player ON player_scores(player_id);
-CREATE INDEX IF NOT EXISTS idx_teams_director ON teams(director_id);
-CREATE INDEX IF NOT EXISTS idx_users_coach_code ON users(coach_code);
+-- Indexes for record lookups
+CREATE INDEX idx_records_match ON records(match_id);
+CREATE INDEX idx_records_player ON records(player_id);
 
--- 10. Enable Row Level Security
+-- =====================================================
+-- 5. Enable Row Level Security
+-- =====================================================
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE player_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
-ALTER TABLE opponents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE records ENABLE ROW LEVEL SECURITY;
 
--- 11. Drop existing policies if they exist
-DROP POLICY IF EXISTS "Service role full access" ON users;
-DROP POLICY IF EXISTS "Service role full access" ON teams;
-DROP POLICY IF EXISTS "Service role full access" ON players;
-DROP POLICY IF EXISTS "Service role full access" ON matches;
-DROP POLICY IF EXISTS "Service role full access" ON player_scores;
-DROP POLICY IF EXISTS "Service role full access" ON schools;
-DROP POLICY IF EXISTS "Service role full access" ON opponents;
-
--- 12. Create permissive policies (allows API with service role to access everything)
+-- =====================================================
+-- 6. Create permissive policies (service role access)
+-- =====================================================
 CREATE POLICY "Service role full access" ON users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON teams FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON players FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON matches FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON player_scores FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON schools FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Service role full access" ON opponents FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON records FOR ALL USING (true) WITH CHECK (true);
 
--- 13. Grant permissions
+-- =====================================================
+-- 7. Grant permissions
+-- =====================================================
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+-- =====================================================
+-- SCHEMA SUMMARY:
+-- =====================================================
+-- users: id, email, first_name, last_name, team_name, team_code, created_at
+-- players: id, first_name, last_name, gender, grad_year, coach_id, is_active, created_at
+-- matches: id, coach_id, gender, opponent, match_date, our_score, opponent_score, result, location, is_complete, created_at
+-- records: id, match_id, player_id, game1, game2, game3, total (auto-calculated), created_at

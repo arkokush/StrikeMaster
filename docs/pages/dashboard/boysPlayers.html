@@ -253,7 +253,6 @@
 
   const currentUser = auth.getUser();
   const GENDER = 'boys';
-  let teamId = null;
   let players = [];
 
   // Setup logout button
@@ -264,8 +263,8 @@
     }
   });
 
-  // Get coach's team for this gender
-  async function getTeam() {
+  // Load players from API
+  async function loadPlayers() {
     if (!currentUser || !currentUser.id) {
       document.getElementById('addPlayerForm').style.display = 'none';
       showMessage('No user data found. Please log out and log in again.', 'error');
@@ -273,51 +272,21 @@
     }
 
     try {
-      console.log('Fetching teams for coach:', currentUser.id);
-      const res = await api.get('/api/coach/' + currentUser.id + '/teams');
+      console.log('Fetching players for coach:', currentUser.id, 'gender:', GENDER);
+      const res = await api.get(`/api/players?coachId=${currentUser.id}&gender=${GENDER}`);
       
       if (!res.ok) {
         console.error('API error:', res.status);
-        showMessage('Failed to load teams from server.', 'error');
+        const err = await res.json();
+        showMessage(err.error || 'Failed to load players from server.', 'error');
         return;
       }
       
-      const teams = await res.json();
-      console.log('Teams found:', teams);
-      
-      if (!teams || teams.length === 0) {
-        showMessage('No teams found for your account. Please sign up again or contact support.', 'error');
-        return;
-      }
-      
-      // Find the boys team
-      const boysTeam = teams.find(t => t.gender === GENDER);
-      if (boysTeam) {
-        teamId = boysTeam.id;
-        console.log('Boys team ID:', teamId);
-        loadPlayers();
-      } else {
-        showMessage('No boys team found. Please contact support.', 'error');
-      }
-    } catch (err) {
-      console.error('Failed to get teams:', err);
-      showMessage('Failed to load team data. Check console for details.', 'error');
-    }
-  }
-
-  // Load players from API
-  async function loadPlayers() {
-    if (!teamId) {
-      playerList.innerHTML = '<p style="text-align:center;">Please select a team first.</p>';
-      return;
-    }
-
-    try {
-      const res = await api.get(`/api/teams/${teamId}/players`);
       players = await res.json();
+      console.log('Players found:', players);
       renderPlayers();
     } catch (err) {
-      console.error("Failed to load players:", err);
+      console.error('Failed to load players:', err);
       playerList.innerHTML = '<p style="text-align:center; color:red;">Failed to load players.</p>';
     }
   }
@@ -397,19 +366,18 @@
       return;
     }
 
-    if (!teamId) {
-      showMessage('No team selected. Please log in again.', 'error');
+    if (!currentUser || !currentUser.id) {
+      showMessage('Not logged in. Please log in again.', 'error');
       return;
     }
 
     try {
       const res = await api.post('/api/players', {
-        teamId,
+        coachId: currentUser.id,
         firstName,
         lastName,
         gradYear,
-        gender: GENDER,
-        email: email || null
+        gender: GENDER
       });
 
       const data = await res.json();
@@ -466,7 +434,7 @@
   document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
 
   // Load on startup
-  getTeam();
+  loadPlayers();
 </script>
 </body>
 </html>

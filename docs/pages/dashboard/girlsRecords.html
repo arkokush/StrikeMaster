@@ -129,9 +129,19 @@ const editDateControls = document.getElementById('editDateControls');
 
 // ---------------- Load players ----------------
 async function loadPlayers() {
+    if (!currentUser || !currentUser.id) {
+        console.error('No user logged in');
+        return;
+    }
     try {
-        const res = await api.get('/api/players');
+        const res = await api.get(`/api/players?coachId=${currentUser.id}&gender=girls`);
+        if (!res.ok) {
+            const err = await res.json();
+            console.error('Failed to load players:', err);
+            return;
+        }
         players = await res.json();
+        console.log('Players loaded:', players);
         renderTable();
     } catch (err) {
         console.error("Error loading players:", err);

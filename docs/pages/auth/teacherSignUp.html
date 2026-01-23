@@ -69,16 +69,16 @@
       message.style.color = '#666';
       
       try {
-        const res = await api.post('/api/auth/signup-coach', { 
+        const res = await api.post('/api/auth/signup', { 
           firstName, 
           lastName, 
-          school,
+          teamName: school,
           email, 
           password 
         });
         const data = await res.json();
         if (!res.ok) { 
-          message.textContent = data.message || 'Signup failed'; 
+          message.textContent = data.error || 'Signup failed'; 
           message.style.color = 'red'; 
           return; 
         }
@@ -86,7 +86,7 @@
         if (data.token) localStorage.setItem('bowling_token', data.token);
         if (data.user) localStorage.setItem('bowling_user', JSON.stringify(data.user));
         
-        message.innerHTML = `Account created!<br>Your student code: <strong>${data.user?.coach_code || '—'}</strong><br>Share this with your students.`;
+        message.innerHTML = `Account created!<br>Your student code: <strong>${data.user?.team_code || '—'}</strong><br>Share this with your students.`;
         message.style.color = 'green';
         
         // Redirect after 3 seconds
