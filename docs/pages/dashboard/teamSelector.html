@@ -9,6 +9,7 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
   <script src="../../assets/js/config/api.js"></script>
+  <script src="../../assets/js/config/teams.js"></script>
   <script src="../../assets/js/auth-helper.js"></script>
   <style>
     body {
@@ -584,31 +585,7 @@
             <label for="opponent">Opponent</label>
             <select id="opponent" required>
               <option value="">Select opponent...</option>
-              <option value="Bergenfield">Bergenfield</option>
-              <option value="Cliffside Park">Cliffside Park</option>
-              <option value="Demarest">Demarest</option>
-              <option value="Dumont">Dumont</option>
-              <option value="Dwight Morrow">Dwight Morrow</option>
-              <option value="Emerson">Emerson</option>
-              <option value="Fort Lee">Fort Lee</option>
-              <option value="Garfield">Garfield</option>
-              <option value="Hasbrouck Heights">Hasbrouck Heights</option>
-              <option value="Leonia">Leonia</option>
-              <option value="Lodi">Lodi</option>
-              <option value="Lyndhurst">Lyndhurst</option>
-              <option value="New Milford">New Milford</option>
-              <option value="Palisades Park">Palisades Park</option>
-              <option value="Pascack Hills">Pascack Hills</option>
-              <option value="Pascack Valley">Pascack Valley</option>
-              <option value="Ridgefield Park">Ridgefield Park</option>
-              <option value="River Dell">River Dell</option>
-              <option value="Rutherford">Rutherford</option>
-              <option value="Saddle Brook">Saddle Brook</option>
-              <option value="Tenafly">Tenafly</option>
-              <option value="Waldwick">Waldwick</option>
-              <option value="Westwood">Westwood</option>
-              <option value="Wood-Ridge">Wood-Ridge</option>
-              <option value="Other">Other</option>
+              <!-- Opponents will be populated by JavaScript -->
             </select>
           </div>
           <div class="form-group">
@@ -671,40 +648,32 @@
     let coachId = null;
     let players = [];
 
-    // Team logo mapping for opponents
-    const teamLogos = {
-      'pascack hills': 'phLogo.png',
-      'pascack valley': 'pvLogo.png',
-      'pv': 'pvLogo.png',
-      'indian hills': 'ihLogo.png',
-      'ih': 'ihLogo.png',
-      'mahwah': 'mahLogo.png',
-      'ramsey': 'ramLogo.png',
-      'river dell': 'rdLogo.png',
-      'rd': 'rdLogo.png',
-      'tenafly': 'tenLogo.png',
-      'westwood': 'wwLogo.png'
-    };
+    // Team logo mapping for opponents - uses centralized teams.js config
+    // getTeamLogo function is provided by teams.js
 
-    // Get opponent logo
+    // Get opponent logo (wrapper for backward compatibility)
     function getOpponentLogo(opponentName) {
-      if (!opponentName) return null;
-      const normalized = opponentName.toLowerCase().trim();
-      
-      // Check exact match first
-      if (teamLogos[normalized]) {
-        return `../../assets/images/Team Logos/${teamLogos[normalized]}`;
-      }
-      
-      // Check partial matches
-      for (const [key, logo] of Object.entries(teamLogos)) {
-        if (normalized.includes(key) || key.includes(normalized)) {
-          return `../../assets/images/Team Logos/${logo}`;
-        }
-      }
-      
-      return null;
+      return getTeamLogo(opponentName, '../../assets/images/Team Logos/');
     }
+
+    // Populate opponent dropdown from SCHOOLS_LIST
+    function populateOpponentDropdown() {
+      const opponentSelect = document.getElementById('opponent');
+      SCHOOLS_LIST.forEach(school => {
+        const option = document.createElement('option');
+        option.value = school.value;
+        option.textContent = school.name;
+        opponentSelect.appendChild(option);
+      });
+      // Add "Other" option at the end
+      const otherOption = document.createElement('option');
+      otherOption.value = 'Other';
+      otherOption.textContent = 'Other';
+      opponentSelect.appendChild(otherOption);
+    }
+
+    // Initialize opponent dropdown
+    populateOpponentDropdown();
 
     // Check authentication
     async function checkAuth() {
