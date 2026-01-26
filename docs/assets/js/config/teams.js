@@ -4,21 +4,21 @@
  */
 
 const TEAMS_CONFIG = {
-  // Bergen Catholic High School - Maroon and Gold
+  // Bergen Catholic High School - Red and Yellow
   'bergen catholic': {
     name: 'Bergen Catholic High School',
     shortName: 'Bergen Catholic',
     logo: 'bcLogo.png',
-    accentColor: '#8B0000', // Maroon
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#CC0000', // Red
+    mainColor: '#FFD700'    // Yellow
   },
-  // Bergenfield High School - Blue and Gold
+  // Bergenfield High School - Maroon and White
   'bergenfield': {
     name: 'Bergenfield High School',
     shortName: 'Bergenfield',
     logo: 'bergenfieldLogo.png',
-    accentColor: '#003366', // Navy Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#800000', // Maroon
+    mainColor: '#FFFFFF'    // White
   },
   // Cliffside Park - Red and Black
   'cliffside park': {
@@ -28,68 +28,68 @@ const TEAMS_CONFIG = {
     accentColor: '#CC0000', // Red
     mainColor: '#000000'    // Black
   },
-  // Clifton High School - Maroon and White
+  // Clifton High School - Maroon and Gray
   'clifton': {
     name: 'Clifton High School',
     shortName: 'Clifton',
     logo: 'clifLogo.png',
     accentColor: '#800000', // Maroon
-    mainColor: '#FFFFFF'    // White
+    mainColor: '#808080'    // Gray
   },
-  // Demarest (Northern Valley Regional at Demarest) - Blue and Gold
+  // Demarest (Northern Valley Regional at Demarest) - Blue and Grey
   'demarest': {
     name: 'Northern Valley Regional High School at Demarest',
     shortName: 'Demarest',
     logo: 'nvdLogo.png',
     accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    mainColor: '#808080'    // Grey
   },
-  // DePaul Catholic - Green and Gold
+  // DePaul Catholic - Green and Black
   'depaul catholic': {
     name: 'DePaul Catholic High School',
     shortName: 'DePaul Catholic',
     logo: 'depLogo.png',
     accentColor: '#006400', // Green
-    mainColor: '#FFD700'    // Gold
+    mainColor: '#000000'    // Black
   },
-  // Dumont High School - Maroon and White
+  // Dumont High School - Orange and White
   'dumont': {
     name: 'Dumont High School',
     shortName: 'Dumont',
     logo: 'dumontLogo.png',
-    accentColor: '#800000', // Maroon
+    accentColor: '#FF6600', // Orange
     mainColor: '#FFFFFF'    // White
   },
-  // Dwight Morrow High School (Englewood) - Maroon and Gold
+  // Dwight Morrow High School - Dark Red and Black
   'dwight morrow': {
     name: 'Dwight Morrow High School',
     shortName: 'Dwight Morrow',
     logo: 'dmLogo.png',
-    accentColor: '#722F37', // Maroon
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#8B0000', // Dark Red
+    mainColor: '#000000'    // Black
   },
-  // Fair Lawn High School - Maroon and White
+  // Fair Lawn High School - Red and White
   'fair lawn': {
     name: 'Fair Lawn High School',
     shortName: 'Fair Lawn',
     logo: 'flLogo.png',
-    accentColor: '#800000', // Maroon
+    accentColor: '#CC0000', // Red
     mainColor: '#FFFFFF'    // White
   },
-  // Hackensack High School - Orange and Black
+  // Hackensack High School - Blue and Gold
   'hackensack': {
     name: 'Hackensack High School',
     shortName: 'Hackensack',
     logo: 'hackLogo.png',
-    accentColor: '#FF6600', // Orange
-    mainColor: '#000000'    // Black
+    accentColor: '#003087', // Blue
+    mainColor: '#FFD700'    // Gold
   },
-  // Holy Angels - Blue and White
+  // Holy Angels - Blue and White (same as IHA)
   'holy angels': {
     name: 'Academy of the Holy Angels',
     shortName: 'Holy Angels',
-    logo: 'ihaLogo.png', // Sharing with IHA for now
-    accentColor: '#003366', // Navy Blue
+    logo: 'ihaLogo.png',
+    accentColor: '#003087', // Blue
     mainColor: '#FFFFFF'    // White
   },
   // Immaculate Heart Academy - Blue and White
@@ -97,91 +97,84 @@ const TEAMS_CONFIG = {
     name: 'Immaculate Heart Academy',
     shortName: 'Immaculate Heart',
     logo: 'ihaLogo.png',
-    accentColor: '#003366', // Navy Blue
+    accentColor: '#003087', // Blue
     mainColor: '#FFFFFF'    // White
   },
   'iha': {
     name: 'Immaculate Heart Academy',
     shortName: 'Immaculate Heart',
     logo: 'ihaLogo.png',
-    accentColor: '#003366',
+    accentColor: '#003087',
     mainColor: '#FFFFFF'
   },
-  // Indian Hills High School - Red and Black
+  // Indian Hills High School - Blue and Gold
   'indian hills': {
     name: 'Indian Hills High School',
     shortName: 'Indian Hills',
     logo: 'ihLogo.png',
-    accentColor: '#CC0000', // Red
-    mainColor: '#000000'    // Black
+    accentColor: '#003087', // Blue
+    mainColor: '#FFD700'    // Gold
   },
   'ih': {
     name: 'Indian Hills High School',
     shortName: 'Indian Hills',
     logo: 'ihLogo.png',
-    accentColor: '#CC0000',
-    mainColor: '#000000'
+    accentColor: '#003087',
+    mainColor: '#FFD700'
   },
-  // Lakeland Regional High School - Blue and Gold
+  // Lakeland Regional High School - Red and Grey
   'lakeland': {
     name: 'Lakeland Regional High School',
     shortName: 'Lakeland',
     logo: 'llLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#CC0000', // Red
+    mainColor: '#808080'    // Grey
   },
-  // Mahwah High School - Red and Black
+  // Mahwah High School - Light Blue and Grey
   'mahwah': {
     name: 'Mahwah High School',
     shortName: 'Mahwah',
     logo: 'mahLogo.png',
-    accentColor: '#C41E3A', // Red
-    mainColor: '#1C1C1C'    // Black
+    accentColor: '#87CEEB', // Light Blue
+    mainColor: '#808080'    // Grey
   },
-  // Northern Highlands Regional High School - Blue and Gold
+  // Northern Highlands Regional High School - Red and Black
   'northern highlands': {
     name: 'Northern Highlands Regional High School',
     shortName: 'Northern Highlands',
     logo: 'nhLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#CC0000', // Red
+    mainColor: '#000000'    // Black
   },
-  // Old Tappan (Northern Valley Regional at Old Tappan) - Green and Gold
+  // Old Tappan (Northern Valley Regional at Old Tappan) - Gold and Blue
   'old tappan': {
     name: 'Northern Valley Regional High School at Old Tappan',
     shortName: 'Old Tappan',
     logo: 'nvotLogo.png',
-    accentColor: '#006633', // Green
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#FFD700', // Gold
+    mainColor: '#003087'    // Blue
   },
-  // Paramus Catholic High School - Blue and Gold
+  // Paramus Catholic High School - Gold and Black
   'paramus catholic': {
     name: 'Paramus Catholic High School',
     shortName: 'Paramus Catholic',
     logo: 'pcLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#FFD700', // Gold
+    mainColor: '#000000'    // Black
   },
-  // Paramus High School - Maroon and White
+  // Paramus High School - Blue and Grey
   'paramus': {
     name: 'Paramus High School',
     shortName: 'Paramus',
     logo: 'paramusLogo.png',
-    accentColor: '#800000', // Maroon
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#003087', // Blue
+    mainColor: '#808080'    // Grey
   },
-  // Pascack Hills High School - Orange and Brown
+  // Pascack Hills High School - Orange and Brown (unchanged)
   'pascack hills': {
     name: 'Pascack Hills High School',
     shortName: 'Pascack Hills',
     logo: 'phLogo.png',
-    accentColor: '#FFA500', // Orange
-    mainColor: '#5F371C'    // Brown
-  },
-  'pascack hills alt': {
-    name: 'Pascack Hills High School (Alt)',
-    shortName: 'Pascack Hills Alt',
-    logo: 'PascackHills2.png',
     accentColor: '#FFA500', // Orange
     mainColor: '#5F371C'    // Brown
   },
@@ -192,154 +185,154 @@ const TEAMS_CONFIG = {
     accentColor: '#FFA500',
     mainColor: '#5F371C'
   },
-  // Pascack Valley High School - Gold and Black
+  // Pascack Valley High School - Green and White
   'pascack valley': {
     name: 'Pascack Valley High School',
     shortName: 'Pascack Valley',
     logo: 'pvLogo.png',
-    accentColor: '#FFD700', // Gold
-    mainColor: '#000000'    // Black
+    accentColor: '#006400', // Green
+    mainColor: '#FFFFFF'    // White
   },
   'pv': {
     name: 'Pascack Valley High School',
     shortName: 'Pascack Valley',
     logo: 'pvLogo.png',
-    accentColor: '#FFD700',
-    mainColor: '#000000'
+    accentColor: '#006400',
+    mainColor: '#FFFFFF'
   },
-  // Passaic County Technical Institute - Red and Gray
+  // Passaic County Technical Institute - Blue and Black
   'passaic county technical institute': {
     name: 'Passaic County Technical Institute',
     shortName: 'PCTI',
     logo: 'pctiLogo.png',
-    accentColor: '#CC0000', // Red
-    mainColor: '#4A4A4A'    // Gray
+    accentColor: '#003087', // Blue
+    mainColor: '#000000'    // Black
   },
   'pcti': {
     name: 'Passaic County Technical Institute',
     shortName: 'PCTI',
     logo: 'pctiLogo.png',
-    accentColor: '#CC0000',
-    mainColor: '#4A4A4A'
+    accentColor: '#003087',
+    mainColor: '#000000'
   },
-  // Passaic High School - Blue and Gold
+  // Passaic High School - Red and Blue
   'passaic': {
     name: 'Passaic High School',
     shortName: 'Passaic',
     logo: 'passaicLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#CC0000', // Red
+    mainColor: '#003087'    // Blue
   },
   // Passaic Valley High School - Green and White
   'passaic valley': {
     name: 'Passaic Valley High School',
     shortName: 'Passaic Valley',
     logo: 'passaicvalLogo.png',
-    accentColor: '#006633', // Green
+    accentColor: '#006400', // Green
     mainColor: '#FFFFFF'    // White
   },
-  // Paterson Eastside High School - Red and White
+  // Paterson Eastside High School - Orange and Blue
   'paterson eastside': {
     name: 'Paterson Eastside High School',
     shortName: 'Paterson Eastside',
     logo: 'pateastLogo.png',
-    accentColor: '#CC0000', // Red
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#FF6600', // Orange
+    mainColor: '#003087'    // Blue
   },
-  // Ramapo High School - Green and Gold
+  // Ramapo High School - Green and Black
   'ramapo': {
     name: 'Ramapo High School',
     shortName: 'Ramapo',
     logo: 'ramapoLogo.png',
-    accentColor: '#006633', // Green
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#006400', // Green
+    mainColor: '#000000'    // Black
   },
-  // Ramsey High School - Green and White
+  // Ramsey High School - Yellow and Blue
   'ramsey': {
     name: 'Ramsey High School',
     shortName: 'Ramsey',
     logo: 'ramLogo.png',
-    accentColor: '#006400', // Green
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#FFD700', // Yellow
+    mainColor: '#003087'    // Blue
   },
-  // Ridgefield Park High School - Scarlet and Gray
+  // Ridgefield Park High School - Red and White
   'ridgefield park': {
     name: 'Ridgefield Park High School',
     shortName: 'Ridgefield Park',
     logo: 'rpLogo.png',
-    accentColor: '#CC0033', // Scarlet
-    mainColor: '#4A4A4A'    // Gray
+    accentColor: '#CC0000', // Red
+    mainColor: '#FFFFFF'    // White
   },
-  // Ridgewood High School - Maroon and White
+  // Ridgewood High School - Black and Red
   'ridgewood': {
     name: 'Ridgewood High School',
     shortName: 'Ridgewood',
     logo: 'ridgeLogo.png',
-    accentColor: '#722F37', // Maroon
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#000000', // Black
+    mainColor: '#CC0000'    // Red
   },
-  // River Dell Regional High School - Gold and Green
+  // River Dell Regional High School - Yellow and Black
   'river dell': {
     name: 'River Dell Regional High School',
     shortName: 'River Dell',
     logo: 'rdLogo.png',
-    accentColor: '#FFD700', // Gold
-    mainColor: '#006633'    // Green
+    accentColor: '#FFD700', // Yellow
+    mainColor: '#000000'    // Black
   },
   'rd': {
     name: 'River Dell Regional High School',
     shortName: 'River Dell',
     logo: 'rdLogo.png',
     accentColor: '#FFD700',
-    mainColor: '#006633'
+    mainColor: '#000000'
   },
-  // Teaneck High School - Maroon and White
+  // Teaneck High School - Blue and Black
   'teaneck': {
     name: 'Teaneck High School',
     shortName: 'Teaneck',
     logo: 'teaneckLogo.png',
-    accentColor: '#800000', // Maroon
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#003087', // Blue
+    mainColor: '#000000'    // Black
   },
-  // Tenafly High School - Red and Blue
+  // Tenafly High School - Orange and White
   'tenafly': {
     name: 'Tenafly High School',
     shortName: 'Tenafly',
     logo: 'tenLogo.png',
-    accentColor: '#C8102E', // Red
-    mainColor: '#1E3A5F'    // Blue
+    accentColor: '#FF6600', // Orange
+    mainColor: '#FFFFFF'    // White
   },
-  // Wayne Hills High School - Blue and Gold
+  // Wayne Hills High School - Maroon and Black
   'wayne hills': {
     name: 'Wayne Hills High School',
     shortName: 'Wayne Hills',
     logo: 'whLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#FFD700'    // Gold
+    accentColor: '#800000', // Maroon
+    mainColor: '#000000'    // Black
   },
-  // Wayne Valley High School - Red and Black
+  // Wayne Valley High School - Blue and Silver
   'wayne valley': {
     name: 'Wayne Valley High School',
     shortName: 'Wayne Valley',
     logo: 'wvLogo.png',
-    accentColor: '#CC0000', // Red
-    mainColor: '#000000'    // Black
+    accentColor: '#003087', // Blue
+    mainColor: '#C0C0C0'    // Silver
   },
-  // West Milford High School - Green and White
+  // West Milford High School - Yellow and Black
   'west milford': {
     name: 'West Milford High School',
     shortName: 'West Milford',
     logo: 'wmLogo.png',
-    accentColor: '#006400', // Green
-    mainColor: '#FFFFFF'    // White
+    accentColor: '#FFD700', // Yellow
+    mainColor: '#000000'    // Black
   },
-  // Westwood Regional High School - Blue and Red
+  // Westwood Regional High School - Cardinal Red and Yellow
   'westwood': {
     name: 'Westwood Regional High School',
     shortName: 'Westwood',
     logo: 'wwLogo.png',
-    accentColor: '#003087', // Blue
-    mainColor: '#C8102E'    // Red
+    accentColor: '#C41E3A', // Cardinal Red
+    mainColor: '#FFD700'    // Yellow
   }
 };
 
