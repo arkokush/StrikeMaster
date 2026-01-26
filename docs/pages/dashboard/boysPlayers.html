@@ -9,6 +9,7 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <script src="../../assets/js/accent-loader.js"></script>
   <script src="../../assets/js/config/api.js"></script>
+  <script src="../../assets/js/config/teams.js"></script>
   <script src="../../assets/js/auth-helper.js"></script>
   <style>
     body {
@@ -520,32 +521,12 @@
     let playerRecords = [];
     let currentFilter = 'all';
 
-    // Team logo mapping for opponents
-    const teamLogos = {
-      'pascack hills': 'phLogo.png',
-      'pascack valley': 'pvLogo.png',
-      'pv': 'pvLogo.png',
-      'indian hills': 'ihLogo.png',
-      'ih': 'ihLogo.png',
-      'mahwah': 'mahLogo.png',
-      'ramsey': 'ramLogo.png',
-      'river dell': 'rdLogo.png',
-      'rd': 'rdLogo.png',
-      'tenafly': 'tenLogo.png',
-      'westwood': 'wwLogo.png'
-    };
+    // Team logo mapping for opponents - uses centralized teams.js config
+    // getTeamLogo function is provided by teams.js
 
-    // Get opponent logo
+    // Get opponent logo (wrapper for backward compatibility)
     function getOpponentLogo(opponentName) {
-      if (!opponentName) return null;
-      const normalized = opponentName.toLowerCase().trim();
-      
-      for (const [key, logo] of Object.entries(teamLogos)) {
-        if (normalized.includes(key) || key.includes(normalized)) {
-          return `../../assets/images/Team Logos/${logo}`;
-        }
-      }
-      return null;
+      return getTeamLogo(opponentName, '../../assets/images/Team Logos/');
     }
 
     // Check authentication
