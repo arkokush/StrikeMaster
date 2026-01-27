@@ -45,6 +45,21 @@
       height: 72px;
       object-fit: contain;
     }
+    .brand-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--neutral-900);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .brand-icon svg {
+      width: 36px;
+      height: 36px;
+      stroke: white;
+    }
     .brand-name {
       text-align: center;
       font-size: 26px;
@@ -162,7 +177,9 @@
 <body>
   <div class="container">
     <div class="logo">
-      <img src="../../assets/images/Team Logos/phLogo.png" alt="Strike Master">
+      <div class="brand-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+      </div>
     </div>
     <h2 class="brand-name">Strike<span>Master</span></h2>
     <p class="subtitle">Log in to access your team dashboard</p>

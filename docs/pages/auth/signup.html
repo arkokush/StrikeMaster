@@ -4,12 +4,8 @@
   <meta charset="UTF-8">
   <title>Sign Up - Strike Master</title>
   <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
-  <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
-  <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="../../assets/js/accent-loader.js"></script>
   <script src="../../assets/js/config/api.js"></script>
-  <script src="../../assets/js/config/teams.js"></script>
   <style>
     :root {
       --neutral-900: #111827;
@@ -19,6 +15,7 @@
       --neutral-100: #f3f4f6;
       --neutral-50: #f9fafb;
     }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--neutral-50);
@@ -33,7 +30,7 @@
       background: white;
       padding: 40px;
       border-radius: 16px;
-      width: 440px;
+      width: 400px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       border: 1px solid var(--neutral-100);
     }
@@ -41,10 +38,20 @@
       text-align: center;
       margin-bottom: 16px;
     }
-    .logo img {
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
+    .brand-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--neutral-900);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .brand-icon svg {
+      width: 36px;
+      height: 36px;
+      stroke: white;
     }
     .brand-name {
       text-align: center;
@@ -61,79 +68,22 @@
     .subtitle {
       text-align: center;
       color: var(--neutral-500);
-      margin-bottom: 25px;
+      margin-bottom: 28px;
       font-size: 14px;
-    }
-
-    /* Role Selection */
-    .role-selection {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 25px;
-    }
-    .role-card {
-      flex: 1;
-      padding: 20px 16px;
-      border: 1px solid var(--neutral-300);
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: white;
-    }
-    .role-card:hover {
-      border-color: var(--neutral-900);
-      background: var(--neutral-50);
-    }
-    .role-card.selected {
-      border-color: var(--neutral-900);
-      border-width: 2px;
-      background: var(--neutral-50);
-    }
-    .role-card .icon {
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 10px;
-      background: var(--neutral-100);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .role-card .icon svg {
-      width: 22px;
-      height: 22px;
-      stroke: var(--neutral-700);
-    }
-    .role-card h3 {
-      margin: 0 0 4px;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--neutral-900);
-    }
-    .role-card p {
-      margin: 0;
-      font-size: 12px;
-      color: var(--neutral-500);
-    }
-
-    /* Forms */
-    .form-section {
-      display: none;
-    }
-    .form-section.active {
-      display: block;
     }
     label {
       display: block;
-      margin-top: 14px;
+      margin-top: 16px;
       font-weight: 500;
       color: var(--neutral-700);
       font-size: 14px;
     }
-    input, select {
+    label:first-of-type {
+      margin-top: 0;
+    }
+    input {
       width: 100%;
-      padding: 11px 14px;
+      padding: 12px 14px;
       margin-top: 6px;
       border: 1px solid var(--neutral-300);
       border-radius: 8px;
@@ -142,22 +92,15 @@
       font-family: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    input:focus, select:focus {
+    input:focus {
       outline: none;
       border-color: var(--neutral-900);
       box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
     }
-    .name-row {
-      display: flex;
-      gap: 12px;
-    }
-    .name-row > div {
-      flex: 1;
-    }
     button {
       width: 100%;
       padding: 13px;
-      margin-top: 22px;
+      margin-top: 24px;
       background: var(--neutral-900);
       color: white;
       font-weight: 600;
@@ -225,128 +168,50 @@
     .login-link a:hover {
       text-decoration: underline;
     }
-    .team-code-display {
-      background: var(--neutral-50);
-      border: 2px dashed var(--neutral-300);
-      border-radius: 10px;
-      padding: 15px;
-      text-align: center;
-      margin-top: 15px;
-    }
-    .team-code-display .code {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--neutral-900);
-      letter-spacing: 3px;
-    }
-    .team-code-display .hint {
+    .team-code-hint {
       font-size: 12px;
       color: var(--neutral-500);
-      margin-top: 5px;
+      margin-top: 6px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">
-      <img src="../../assets/images/Team Logos/phLogo.png" alt="Strike Master">
+      <div class="brand-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+      </div>
     </div>
     <h2 class="brand-name">Strike<span>Master</span></h2>
-    <p class="subtitle">Choose your role to get started</p>
+    <p class="subtitle">Create your student account</p>
 
-    <!-- Role Selection -->
-    <div class="role-selection" id="roleSelection">
-      <div class="role-card" data-role="coach" onclick="selectRole('coach')">
-        <div class="icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        </div>
-        <h3>Coach</h3>
-        <p>Manage team & enter scores</p>
-      </div>
-      <div class="role-card" data-role="student" onclick="selectRole('student')">
-        <div class="icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        </div>
-        <h3>Student</h3>
-        <p>View team stats (read-only)</p>
-      </div>
-    </div>
-
-    <!-- Coach Sign Up Form -->
-    <div class="form-section" id="coachForm">
-      <form id="coachSignupForm">
-        <div class="name-row">
-          <div>
-            <label>First Name</label>
-            <input type="text" id="coachFirstName" placeholder="John" required>
-          </div>
-          <div>
-            <label>Last Name</label>
-            <input type="text" id="coachLastName" placeholder="Smith" required>
-          </div>
-        </div>
-        <label>School</label>
-        <select id="coachSchool" required>
-          <option value="">Select your school</option>
-        </select>
-        <label>Email</label>
-        <input type="email" id="coachEmail" placeholder="coach@school.edu" required>
-        <label>Password</label>
-        <input type="password" id="coachPassword" placeholder="Min 6 characters" required minlength="6">
-        <button type="submit" id="coachSubmitBtn">Create Coach Account</button>
-      </form>
-    </div>
-
-    <!-- Student Sign Up Form -->
-    <div class="form-section" id="studentForm">
-      <form id="studentSignupForm">
-        <label>Email</label>
-        <input type="email" id="studentEmail" placeholder="you@example.com" required>
-        <label>Password</label>
-        <input type="password" id="studentPassword" placeholder="Create a password" required minlength="6">
-        <label>Team Code</label>
-        <input type="text" id="studentCode" placeholder="Code from your coach" required maxlength="6" style="text-transform: uppercase;">
-        <button type="submit" id="studentSubmitBtn">Create Student Account</button>
-      </form>
-    </div>
-
+    <form id="signupForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+      
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Create a password" required minlength="6">
+      
+      <label for="teamCode">Team Code</label>
+      <input type="text" id="teamCode" placeholder="Enter code from your coach" required maxlength="6" style="text-transform: uppercase;">
+      <p class="team-code-hint">Get this 6-character code from your coach</p>
+      
+      <button type="submit" id="submitBtn">Create Account</button>
+    </form>
+    
     <div class="message" id="message" style="display: none;"></div>
-
+    
     <div class="login-link">
       Already have an account? <a href="login.html">Log In</a>
     </div>
-
+    
     <a class="back" href="../../index.html">← Back to Home</a>
   </div>
 
   <script>
-    let selectedRole = null;
+    const form = document.getElementById('signupForm');
     const msgEl = document.getElementById('message');
-
-    // Populate school dropdown
-    const schoolSelect = document.getElementById('coachSchool');
-    SCHOOLS_LIST.forEach(school => {
-      const option = document.createElement('option');
-      option.value = school.value;
-      option.textContent = school.name;
-      schoolSelect.appendChild(option);
-    });
-
-    function selectRole(role) {
-      selectedRole = role;
-      
-      // Update UI
-      document.querySelectorAll('.role-card').forEach(card => {
-        card.classList.toggle('selected', card.dataset.role === role);
-      });
-      
-      // Show appropriate form
-      document.getElementById('coachForm').classList.toggle('active', role === 'coach');
-      document.getElementById('studentForm').classList.toggle('active', role === 'student');
-      
-      // Hide message
-      msgEl.style.display = 'none';
-    }
+    const submitBtn = document.getElementById('submitBtn');
 
     function showMessage(text, type) {
       msgEl.innerHTML = text;
@@ -354,83 +219,20 @@
       msgEl.style.display = 'block';
     }
 
-    // Coach Sign Up
-    document.getElementById('coachSignupForm').addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const firstName = document.getElementById('coachFirstName').value.trim();
-      const lastName = document.getElementById('coachLastName').value.trim();
-      const school = document.getElementById('coachSchool').value;
-      const email = document.getElementById('coachEmail').value.trim();
-      const password = document.getElementById('coachPassword').value;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const teamCode = document.getElementById('teamCode').value.trim().toUpperCase();
       
-      if (!school) {
-        showMessage('Please select a school', 'error');
+      if (!email || !password || !teamCode) {
+        showMessage('Please fill in all fields', 'error');
         return;
       }
-      
-      const btn = document.getElementById('coachSubmitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Creating account...';
-      showMessage('Setting up your account...', 'loading');
 
-      try {
-        const res = await api.post('/api/auth/signup', {
-          firstName,
-          lastName,
-          teamName: school,
-          email,
-          password
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          showMessage(data.error || 'Sign up failed', 'error');
-          btn.disabled = false;
-          btn.textContent = 'Create Coach Account';
-          return;
-        }
-
-        // Store auth
-        if (data.token) localStorage.setItem('bowling_token', data.token);
-        if (data.user) {
-          localStorage.setItem('bowling_user', JSON.stringify(data.user));
-          localStorage.setItem('bowling_role', 'coach');
-        }
-
-        const teamCode = data.user?.team_code || '------';
-        showMessage(`
-          Account created!<br><br>
-          <div class="team-code-display">
-            <div class="code">${teamCode}</div>
-            <div class="hint">Share this code with your students</div>
-          </div>
-          <br>Redirecting to dashboard...
-        `, 'success');
-
-        setTimeout(() => {
-          window.location.href = '../dashboard/teamSelector.html';
-        }, 3500);
-        
-      } catch (err) {
-        console.error(err);
-        showMessage('Network error. Please try again.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Create Coach Account';
-      }
-    });
-
-    // Student Sign Up
-    document.getElementById('studentSignupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('studentEmail').value.trim();
-      const password = document.getElementById('studentPassword').value;
-      const teamCode = document.getElementById('studentCode').value.trim().toUpperCase();
-      
-      const btn = document.getElementById('studentSubmitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Creating account...';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
       showMessage('Verifying team code...', 'loading');
 
       try {
@@ -443,8 +245,8 @@
         
         if (!res.ok) {
           showMessage(data.error || 'Sign up failed', 'error');
-          btn.disabled = false;
-          btn.textContent = 'Create Student Account';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
           return;
         }
 
@@ -463,8 +265,8 @@
       } catch (err) {
         console.error(err);
         showMessage('Network error. Please try again.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Create Student Account';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
       }
     });
   </script>

@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Strike Master</title>
   <link rel="icon" type="image/png" href="assets/images/StrikeMasterLogo2.png">
-  <link rel="stylesheet" type="text/css" href="assets/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="assets/js/accent-loader.js"></script>
   <style>
     :root {
       --neutral-900: #111827;
@@ -16,6 +14,10 @@
       --neutral-300: #d1d5db;
       --neutral-100: #f3f4f6;
       --neutral-50: #f9fafb;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
@@ -31,16 +33,27 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: calc(100vh - 80px);
+      min-height: 100vh;
       padding: 40px 20px;
       text-align: center;
     }
 
-    .hero-logo {
-      width: 100px;
-      height: 100px;
+    .brand-icon {
+      width: 80px;
+      height: 80px;
       margin-bottom: 24px;
+      background: var(--neutral-900);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       animation: fadeIn 0.6s ease;
+    }
+
+    .brand-icon svg {
+      width: 44px;
+      height: 44px;
+      stroke: white;
     }
 
     .brand-name {
@@ -184,15 +197,10 @@
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <a href="index.html" class="logo">
-      <img src="assets/images/Team Logos/phLogo.png" alt="Strike Master Logo">
-    </a>
-    <div class="nav-links" aria-hidden="true"></div>
-  </div>
-
   <main class="hero">
-    <img src="assets/images/Team Logos/phLogo.png" alt="Strike Master" class="hero-logo">
+    <div class="brand-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+    </div>
     <h1 class="brand-name">Strike<span>Master</span></h1>
     <p class="tagline">The simple, secure scoreboard for high school bowling teams. Track players, enter scores, and view team stats.</p>
     

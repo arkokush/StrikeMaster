@@ -49,7 +49,7 @@
 
   <script>
     // Require authentication
-    if (!auth.requireCoach('../auth/teacherLogin.html')) {
+    if (!auth.requireCoach('../auth/login.html')) {
       throw new Error('Not authenticated');
     }
     document.getElementById('logoutBtn').addEventListener('click', (e) => {

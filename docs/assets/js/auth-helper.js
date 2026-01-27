@@ -50,7 +50,7 @@ const auth = {
   // Require authentication - redirect to login if not authenticated
   requireAuth: function(loginUrl) {
     if (!this.isLoggedIn()) {
-      const defaultLoginUrl = loginUrl || '../../pages/auth/teacherLogin.html';
+      const defaultLoginUrl = loginUrl || '../../pages/auth/login.html';
       window.location.href = defaultLoginUrl;
       return false;
     }
@@ -60,7 +60,7 @@ const auth = {
   // Require coach role - redirect to login if not a coach
   requireCoach: function(loginUrl) {
     if (!this.isLoggedIn()) {
-      const defaultLoginUrl = loginUrl || '../../pages/auth/teacherLogin.html';
+      const defaultLoginUrl = loginUrl || '../../pages/auth/login.html';
       window.location.href = defaultLoginUrl;
       return false;
     }

@@ -264,7 +264,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 // Require authentication
-if (!auth.requireCoach('../auth/teacherLogin.html')) {
+if (!auth.requireCoach('../auth/login.html')) {
   throw new Error('Not authenticated');
 }
 

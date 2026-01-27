@@ -577,7 +577,7 @@
     async function checkAuth() {
       const userData = localStorage.getItem('bowling_user');
       if (!userData) {
-        window.location.href = '../auth/teacherLogin.html';
+        window.location.href = '../auth/login.html';
         return null;
       }
       try {
@@ -586,7 +586,7 @@
         return user;
       } catch (error) {
         console.error('Auth check failed:', error);
-        window.location.href = '../auth/teacherLogin.html';
+        window.location.href = '../auth/login.html';
         return null;
       }
     }
@@ -661,7 +661,7 @@
       e.preventDefault();
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('bowling_user');
-      window.location.href = '../auth/teacherLogin.html';
+      window.location.href = '../auth/login.html';
     });
 
     // Load players
