@@ -620,7 +620,7 @@ app.post('/api/matches', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { coachId, gender, opponent, matchDate, location, result, ourScore, opponentScore, comments } = req.body;
+    const { coachId, gender, opponent, matchDate, location, result, ourScore, opponentScore, comments, teamG1, teamG2, teamG3, oppG1, oppG2, oppG3 } = req.body;
 
     if (!coachId || !gender || !opponent || !matchDate) {
       return res.status(400).json({ error: 'Required: coachId, gender, opponent, matchDate' });
@@ -638,6 +638,12 @@ app.post('/api/matches', async (req, res) => {
         our_score: ourScore ? parseInt(ourScore) : 0,
         opponent_score: opponentScore ? parseInt(opponentScore) : 0,
         comments: comments || null,
+        team_g1: teamG1 ? parseInt(teamG1) : null,
+        team_g2: teamG2 ? parseInt(teamG2) : null,
+        team_g3: teamG3 ? parseInt(teamG3) : null,
+        opp_g1: oppG1 ? parseInt(oppG1) : null,
+        opp_g2: oppG2 ? parseInt(oppG2) : null,
+        opp_g3: oppG3 ? parseInt(oppG3) : null,
         is_complete: false
       }])
       .select()
@@ -659,7 +665,7 @@ app.put('/api/matches/:id', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { opponent, matchDate, location, ourScore, opponentScore, result, isComplete, comments } = req.body;
+    const { opponent, matchDate, location, ourScore, opponentScore, result, isComplete, comments, teamG1, teamG2, teamG3, oppG1, oppG2, oppG3 } = req.body;
 
     const updateData = {};
     if (opponent !== undefined) updateData.opponent = opponent;
@@ -670,6 +676,12 @@ app.put('/api/matches/:id', async (req, res) => {
     if (result !== undefined) updateData.result = result;
     if (isComplete !== undefined) updateData.is_complete = isComplete;
     if (comments !== undefined) updateData.comments = comments;
+    if (teamG1 !== undefined) updateData.team_g1 = teamG1 ? parseInt(teamG1) : null;
+    if (teamG2 !== undefined) updateData.team_g2 = teamG2 ? parseInt(teamG2) : null;
+    if (teamG3 !== undefined) updateData.team_g3 = teamG3 ? parseInt(teamG3) : null;
+    if (oppG1 !== undefined) updateData.opp_g1 = oppG1 ? parseInt(oppG1) : null;
+    if (oppG2 !== undefined) updateData.opp_g2 = oppG2 ? parseInt(oppG2) : null;
+    if (oppG3 !== undefined) updateData.opp_g3 = oppG3 ? parseInt(oppG3) : null;
 
     const { data, error } = await supabase
       .from('matches')
