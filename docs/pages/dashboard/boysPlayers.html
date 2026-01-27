@@ -45,20 +45,27 @@
     }
 
     .gender-btn {
-      padding: 12px 40px;
-      border: 2px solid var(--accent-color);
-      background: transparent;
-      color: var(--accent-color);
-      border-radius: 8px;
+      padding: 12px 36px;
+      border: none;
+      background: var(--card-bg);
+      color: var(--text-color);
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 16px;
-      transition: all 0.2s;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .gender-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
     .gender-btn.active {
       background: var(--accent-color);
       color: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
 
     /* Add Player Section */
@@ -695,7 +702,7 @@
         container.innerHTML = players.map(player => `
           <div class="player-card" data-player-id="${player.id}" onclick="selectPlayer('${player.id}')">
             <div class="player-info">
-              <h4>${player.first_name} ${player.last_name} ${player._gender ? (player._gender === 'boys' ? '♂' : '♀') : ''}</h4>
+              <h4>${player.first_name} ${player.last_name}</h4>
               <span>Class of ${player.grad_year || 'N/A'}</span>
             </div>
             <div class="player-actions">
