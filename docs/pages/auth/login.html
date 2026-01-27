@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Log In - Strike Master</title>
+  <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
+  <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
+  <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
+  <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+    h2 {
+      text-align: center;
+      margin: 0 0 8px;
+      color: var(--accent-color);
+      font-size: 28px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-top: 6px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 25px;
+      background: var(--accent-color);
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: color-mix(in srgb, var(--accent-color) 80%, black);
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .message {
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .message.error {
+      background: #ffe6e6;
+      color: #c00;
+    }
+    .message.success {
+      background: #e6ffe6;
+      color: #080;
+    }
+    .message.loading {
+      background: #f0f0f0;
+      color: #666;
+    }
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back:hover {
+      color: var(--accent-color);
+    }
+    .signup-link {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+      color: #666;
+    }
+    .signup-link a {
+      color: var(--accent-color);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="../../assets/images/Team Logos/phLogo.png" alt="Strike Master">
+    </div>
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Log in to access your team dashboard</p>
+    
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+      
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required>
+      
+      <button type="submit" id="submitBtn">Log In</button>
+    </form>
+    
+    <div class="message" id="message" style="display: none;"></div>
+    
+    <div class="signup-link">
+      Don't have an account? <a href="signup.html">Sign Up</a>
+    </div>
+    
+    <a class="back" href="../../index.html">← Back to Home</a>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const msgEl = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function showMessage(text, type) {
+      msgEl.textContent = text;
+      msgEl.className = `message ${type}`;
+      msgEl.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Logging in...';
+      showMessage('Checking credentials...', 'loading');
+
+      // Try coach login first
+      try {
+        const coachRes = await api.post('/api/auth/login', { email, password });
+        const coachData = await coachRes.json();
+        
+        if (coachRes.ok && coachData.user) {
+          // Coach login successful
+          if (coachData.token) {
+            localStorage.setItem('bowling_token', coachData.token);
+          }
+          localStorage.setItem('bowling_user', JSON.stringify(coachData.user));
+          localStorage.setItem('bowling_role', 'coach');
+          
+          showMessage('Welcome back, Coach! Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = '../dashboard/teamSelector.html';
+          }, 1000);
+          return;
+        }
+      } catch (err) {
+        console.log('Coach login failed, trying student...');
+      }
+
+      // Try student login
+      try {
+        const studentRes = await api.post('/api/auth/student-login', { email, password });
+        const studentData = await studentRes.json();
+        
+        if (studentRes.ok && studentData.user) {
+          // Student login successful
+          localStorage.setItem('bowling_user', JSON.stringify(studentData.user));
+          localStorage.setItem('bowling_role', 'student');
+          
+          showMessage('Welcome! Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = '../dashboard/teamSelector.html';
+          }, 1000);
+          return;
+        }
+      } catch (err) {
+        console.log('Student login also failed');
+      }
+
+      // Both failed
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Log In';
+      showMessage('Invalid email or password. Please try again.', 'error');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up - Strike Master</title>
+  <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
+  <link rel="stylesheet" type="text/css" href="../../assets/css/style.css">
+  <link rel="stylesheet" type="text/css" href="../../assets/css/stored-colors.css">
+  <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/config/api.js"></script>
+  <script src="../../assets/js/config/teams.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      width: 440px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+    h2 {
+      text-align: center;
+      margin: 0 0 8px;
+      color: var(--accent-color);
+      font-size: 28px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    /* Role Selection */
+    .role-selection {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .role-card {
+      flex: 1;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .role-card:hover {
+      border-color: var(--accent-color);
+      background: #fafafa;
+    }
+    .role-card.selected {
+      border-color: var(--accent-color);
+      background: color-mix(in srgb, var(--accent-color) 10%, white);
+    }
+    .role-card .icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    .role-card h3 {
+      margin: 0 0 5px;
+      font-size: 18px;
+      color: #333;
+    }
+    .role-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Forms */
+    .form-section {
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+    }
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+    .name-row {
+      display: flex;
+      gap: 12px;
+    }
+    .name-row > div {
+      flex: 1;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 22px;
+      background: #333;
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #000;
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .message {
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 600;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .message.error {
+      background: #ffe6e6;
+      color: #c00;
+    }
+    .message.success {
+      background: #e6ffe6;
+      color: #080;
+    }
+    .message.loading {
+      background: #f0f0f0;
+      color: #666;
+    }
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #666;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back:hover {
+      color: var(--accent-color);
+    }
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+      color: #666;
+    }
+    .login-link a {
+      color: var(--accent-color);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+    .team-code-display {
+      background: #f8f8f8;
+      border: 2px dashed var(--accent-color);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      margin-top: 15px;
+    }
+    .team-code-display .code {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-color);
+      letter-spacing: 3px;
+    }
+    .team-code-display .hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="../../assets/images/Team Logos/phLogo.png" alt="Strike Master">
+    </div>
+    <h2>Create Account</h2>
+    <p class="subtitle">Choose your role to get started</p>
+
+    <!-- Role Selection -->
+    <div class="role-selection" id="roleSelection">
+      <div class="role-card" data-role="coach" onclick="selectRole('coach')">
+        <div class="icon">🎳</div>
+        <h3>Coach</h3>
+        <p>Manage team & enter scores</p>
+      </div>
+      <div class="role-card" data-role="student" onclick="selectRole('student')">
+        <div class="icon">📊</div>
+        <h3>Student</h3>
+        <p>View team stats (read-only)</p>
+      </div>
+    </div>
+
+    <!-- Coach Sign Up Form -->
+    <div class="form-section" id="coachForm">
+      <form id="coachSignupForm">
+        <div class="name-row">
+          <div>
+            <label>First Name</label>
+            <input type="text" id="coachFirstName" placeholder="John" required>
+          </div>
+          <div>
+            <label>Last Name</label>
+            <input type="text" id="coachLastName" placeholder="Smith" required>
+          </div>
+        </div>
+        <label>School</label>
+        <select id="coachSchool" required>
+          <option value="">Select your school</option>
+        </select>
+        <label>Email</label>
+        <input type="email" id="coachEmail" placeholder="coach@school.edu" required>
+        <label>Password</label>
+        <input type="password" id="coachPassword" placeholder="Min 6 characters" required minlength="6">
+        <button type="submit" id="coachSubmitBtn">Create Coach Account</button>
+      </form>
+    </div>
+
+    <!-- Student Sign Up Form -->
+    <div class="form-section" id="studentForm">
+      <form id="studentSignupForm">
+        <label>Email</label>
+        <input type="email" id="studentEmail" placeholder="you@example.com" required>
+        <label>Password</label>
+        <input type="password" id="studentPassword" placeholder="Create a password" required minlength="6">
+        <label>Team Code</label>
+        <input type="text" id="studentCode" placeholder="Code from your coach" required maxlength="6" style="text-transform: uppercase;">
+        <button type="submit" id="studentSubmitBtn">Create Student Account</button>
+      </form>
+    </div>
+
+    <div class="message" id="message" style="display: none;"></div>
+
+    <div class="login-link">
+      Already have an account? <a href="login.html">Log In</a>
+    </div>
+
+    <a class="back" href="../../index.html">← Back to Home</a>
+  </div>
+
+  <script>
+    let selectedRole = null;
+    const msgEl = document.getElementById('message');
+
+    // Populate school dropdown
+    const schoolSelect = document.getElementById('coachSchool');
+    SCHOOLS_LIST.forEach(school => {
+      const option = document.createElement('option');
+      option.value = school.value;
+      option.textContent = school.name;
+      schoolSelect.appendChild(option);
+    });
+
+    function selectRole(role) {
+      selectedRole = role;
+      
+      // Update UI
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.role === role);
+      });
+      
+      // Show appropriate form
+      document.getElementById('coachForm').classList.toggle('active', role === 'coach');
+      document.getElementById('studentForm').classList.toggle('active', role === 'student');
+      
+      // Hide message
+      msgEl.style.display = 'none';
+    }
+
+    function showMessage(text, type) {
+      msgEl.innerHTML = text;
+      msgEl.className = `message ${type}`;
+      msgEl.style.display = 'block';
+    }
+
+    // Coach Sign Up
+    document.getElementById('coachSignupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const firstName = document.getElementById('coachFirstName').value.trim();
+      const lastName = document.getElementById('coachLastName').value.trim();
+      const school = document.getElementById('coachSchool').value;
+      const email = document.getElementById('coachEmail').value.trim();
+      const password = document.getElementById('coachPassword').value;
+      
+      if (!school) {
+        showMessage('Please select a school', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('coachSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+      showMessage('Setting up your account...', 'loading');
+
+      try {
+        const res = await api.post('/api/auth/signup', {
+          firstName,
+          lastName,
+          teamName: school,
+          email,
+          password
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          showMessage(data.error || 'Sign up failed', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Create Coach Account';
+          return;
+        }
+
+        // Store auth
+        if (data.token) localStorage.setItem('bowling_token', data.token);
+        if (data.user) {
+          localStorage.setItem('bowling_user', JSON.stringify(data.user));
+          localStorage.setItem('bowling_role', 'coach');
+        }
+
+        const teamCode = data.user?.team_code || '------';
+        showMessage(`
+          Account created! 🎉<br><br>
+          <div class="team-code-display">
+            <div class="code">${teamCode}</div>
+            <div class="hint">Share this code with your students</div>
+          </div>
+          <br>Redirecting to dashboard...
+        `, 'success');
+
+        setTimeout(() => {
+          window.location.href = '../dashboard/teamSelector.html';
+        }, 3500);
+        
+      } catch (err) {
+        console.error(err);
+        showMessage('Network error. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Coach Account';
+      }
+    });
+
+    // Student Sign Up
+    document.getElementById('studentSignupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('studentEmail').value.trim();
+      const password = document.getElementById('studentPassword').value;
+      const teamCode = document.getElementById('studentCode').value.trim().toUpperCase();
+      
+      const btn = document.getElementById('studentSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+      showMessage('Verifying team code...', 'loading');
+
+      try {
+        const res = await api.post('/api/auth/student-signup', {
+          email,
+          password,
+          teamCode
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          showMessage(data.error || 'Sign up failed', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Create Student Account';
+          return;
+        }
+
+        // Store auth
+        if (data.user) {
+          localStorage.setItem('bowling_user', JSON.stringify(data.user));
+          localStorage.setItem('bowling_role', 'student');
+        }
+
+        showMessage(`Account created! Welcome to ${data.teamName || 'the team'}! 🎳<br>Redirecting...`, 'success');
+
+        setTimeout(() => {
+          window.location.href = '../dashboard/teamSelector.html';
+        }, 1500);
+        
+      } catch (err) {
+        console.error(err);
+        showMessage('Network error. Please try again.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Student Account';
+      }
+    });
+  </script>
+</body>
+</html>
