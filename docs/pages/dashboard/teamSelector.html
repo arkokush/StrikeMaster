@@ -536,6 +536,93 @@
       color: #721c24;
     }
 
+    .location-wrapper {
+      display: flex;
+      gap: 8px;
+    }
+
+    .location-wrapper select {
+      flex: 1;
+    }
+
+    .add-location-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .add-location-btn:hover {
+      opacity: 0.85;
+    }
+
+    .new-location-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .new-location-input input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      background: var(--content-bg);
+      color: var(--text-color);
+    }
+
+    .save-location-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .cancel-location-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .player-gender-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .player-gender-badge.boys {
+      background: #cce5ff;
+      color: #004085;
+    }
+
+    .player-gender-badge.girls {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .gender-separator {
+      background: var(--accent-color);
+      color: white;
+      padding: 8px;
+      text-align: center;
+      font-weight: 600;
+    }
+
     .no-matches p {
       font-size: 16px;
       margin-bottom: 20px;
@@ -651,7 +738,18 @@
           </div>
           <div class="form-group">
             <label for="location">Location</label>
-            <input type="text" id="location" placeholder="e.g., Bowler City">
+            <div class="location-wrapper">
+              <select id="location">
+                <option value="">Select location...</option>
+                <!-- Locations will be populated from localStorage -->
+              </select>
+              <button type="button" class="add-location-btn" onclick="showAddLocation()">+</button>
+            </div>
+            <div id="newLocationInput" class="new-location-input" style="display: none;">
+              <input type="text" id="newLocation" placeholder="Enter new location...">
+              <button type="button" class="save-location-btn" onclick="saveNewLocation()">Save</button>
+              <button type="button" class="cancel-location-btn" onclick="hideAddLocation()">Cancel</button>
+            </div>
           </div>
         </div>
 
@@ -708,6 +806,7 @@
     let currentGender = 'boys';
     let coachId = null;
     let players = [];
+    let allPlayers = { boys: [], girls: [] };
 
     // Team logo mapping for opponents - uses centralized teams.js config
     // getTeamLogo function is provided by teams.js
@@ -735,6 +834,66 @@
 
     // Initialize opponent dropdown
     populateOpponentDropdown();
+
+    // ==================== LOCATION MANAGEMENT ====================
+    
+    // Get saved locations from localStorage
+    function getSavedLocations() {
+      const locations = localStorage.getItem('bowling_locations');
+      return locations ? JSON.parse(locations) : ['Montvale Lanes', 'Bowler City', 'Lodi Lanes', 'Parkway Lanes', 'Holiday Bowl'];
+    }
+
+    // Save locations to localStorage
+    function saveSavedLocations(locations) {
+      localStorage.setItem('bowling_locations', JSON.stringify(locations));
+    }
+
+    // Populate location dropdown
+    function populateLocationDropdown(selectedValue = '') {
+      const locationSelect = document.getElementById('location');
+      const locations = getSavedLocations();
+      
+      // Clear existing options except first
+      locationSelect.innerHTML = '<option value="">Select location...</option>';
+      
+      locations.sort().forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.textContent = loc;
+        if (loc === selectedValue) option.selected = true;
+        locationSelect.appendChild(option);
+      });
+    }
+
+    // Show add location input
+    function showAddLocation() {
+      document.getElementById('newLocationInput').style.display = 'flex';
+      document.getElementById('newLocation').focus();
+    }
+
+    // Hide add location input
+    function hideAddLocation() {
+      document.getElementById('newLocationInput').style.display = 'none';
+      document.getElementById('newLocation').value = '';
+    }
+
+    // Save new location
+    function saveNewLocation() {
+      const newLocation = document.getElementById('newLocation').value.trim();
+      if (!newLocation) return;
+
+      const locations = getSavedLocations();
+      if (!locations.includes(newLocation)) {
+        locations.push(newLocation);
+        saveSavedLocations(locations);
+      }
+      
+      populateLocationDropdown(newLocation);
+      hideAddLocation();
+    }
+
+    // Initialize location dropdown
+    populateLocationDropdown();
 
     // Check authentication
     async function checkAuth() {
@@ -773,6 +932,8 @@
       resetModal();
       document.getElementById('matchModal').classList.add('active');
       document.getElementById('matchDate').valueAsDate = new Date();
+      // Load players for the modal
+      loadPlayers();
     });
 
     document.getElementById('closeModal').addEventListener('click', () => {
@@ -799,12 +960,28 @@
     async function loadPlayers() {
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
-        const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
         
-        if (!response.ok) throw new Error('Failed to fetch players');
-        
-        players = await response.json();
-        renderPlayersTable();
+        if (currentGender === 'all') {
+          // Load both boys and girls players
+          const [boysResponse, girlsResponse] = await Promise.all([
+            fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=boys`),
+            fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=girls`)
+          ]);
+          
+          if (!boysResponse.ok || !girlsResponse.ok) throw new Error('Failed to fetch players');
+          
+          allPlayers.boys = await boysResponse.json();
+          allPlayers.girls = await girlsResponse.json();
+          players = [...allPlayers.boys, ...allPlayers.girls];
+          renderAllPlayersTable();
+        } else {
+          const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
+          
+          if (!response.ok) throw new Error('Failed to fetch players');
+          
+          players = await response.json();
+          renderPlayersTable();
+        }
       } catch (error) {
         console.error('Error loading players:', error);
         document.getElementById('playersTableBody').innerHTML = 
@@ -812,7 +989,7 @@
       }
     }
 
-    // Render players table in modal
+    // Render players table in modal (single gender)
     function renderPlayersTable() {
       const tbody = document.getElementById('playersTableBody');
       
@@ -831,6 +1008,50 @@
           <td><input type="checkbox" class="dnp-checkbox" onchange="toggleDNP(this)"></td>
         </tr>
       `).join('');
+    }
+
+    // Render all players table (both genders with separators)
+    function renderAllPlayersTable() {
+      const tbody = document.getElementById('playersTableBody');
+      
+      if (allPlayers.boys.length === 0 && allPlayers.girls.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">No players found. Add players in the Players tab first.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      
+      // Boys section
+      if (allPlayers.boys.length > 0) {
+        html += '<tr><td colspan="6" class="gender-separator">Boys Team</td></tr>';
+        html += allPlayers.boys.map(player => `
+          <tr class="player-row" data-player-id="${player.id}" data-gender="boys">
+            <td class="player-name-cell">${player.first_name} ${player.last_name}</td>
+            <td><input type="number" class="score-input game1" min="0" max="300" placeholder="-"></td>
+            <td><input type="number" class="score-input game2" min="0" max="300" placeholder="-"></td>
+            <td><input type="number" class="score-input game3" min="0" max="300" placeholder="-"></td>
+            <td><input type="checkbox" class="varsity-checkbox" checked></td>
+            <td><input type="checkbox" class="dnp-checkbox" onchange="toggleDNP(this)"></td>
+          </tr>
+        `).join('');
+      }
+      
+      // Girls section
+      if (allPlayers.girls.length > 0) {
+        html += '<tr><td colspan="6" class="gender-separator">Girls Team</td></tr>';
+        html += allPlayers.girls.map(player => `
+          <tr class="player-row" data-player-id="${player.id}" data-gender="girls">
+            <td class="player-name-cell">${player.first_name} ${player.last_name}</td>
+            <td><input type="number" class="score-input game1" min="0" max="300" placeholder="-"></td>
+            <td><input type="number" class="score-input game2" min="0" max="300" placeholder="-"></td>
+            <td><input type="number" class="score-input game3" min="0" max="300" placeholder="-"></td>
+            <td><input type="checkbox" class="varsity-checkbox" checked></td>
+            <td><input type="checkbox" class="dnp-checkbox" onchange="toggleDNP(this)"></td>
+          </tr>
+        `).join('');
+      }
+      
+      tbody.innerHTML = html;
     }
 
     // Toggle DNP (Did Not Play)
@@ -856,11 +1077,10 @@
       e.preventDefault();
       
       const isEditing = editingMatchId !== null;
-      const matchGender = isEditing ? editingMatchGender : currentGender;
+      const isAllMode = currentGender === 'all' && !isEditing;
       
-      const matchData = {
+      const baseMatchData = {
         coachId: coachId,
-        gender: matchGender,
         opponent: document.getElementById('opponent').value,
         matchDate: document.getElementById('matchDate').value,
         location: document.getElementById('location').value,
@@ -873,10 +1093,10 @@
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
         
-        let matchId;
-        
         if (isEditing) {
-          // Update existing match
+          // Update existing match (single gender)
+          const matchData = { ...baseMatchData, gender: editingMatchGender };
+          
           const matchResponse = await fetch(`${API_BASE}/api/matches/${editingMatchId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -884,14 +1104,83 @@
           });
 
           if (!matchResponse.ok) throw new Error('Failed to update match');
-          matchId = editingMatchId;
           
           // Delete existing records for this match (we'll recreate them)
-          await fetch(`${API_BASE}/api/records/match/${matchId}`, {
+          await fetch(`${API_BASE}/api/records/match/${editingMatchId}`, {
             method: 'DELETE'
           });
+          
+          // Save player records for this single match
+          await savePlayerRecords(editingMatchId, null);
+          
+          showMessage('Match updated successfully!', 'success');
+        } else if (isAllMode) {
+          // Create separate matches for boys and girls
+          const boysRows = document.querySelectorAll('.player-row[data-gender="boys"]');
+          const girlsRows = document.querySelectorAll('.player-row[data-gender="girls"]');
+          
+          // Check if there are any scores for boys
+          const hasBoysScores = Array.from(boysRows).some(row => {
+            const dnp = row.querySelector('.dnp-checkbox').checked;
+            if (dnp) return false;
+            const game1 = row.querySelector('.game1').value;
+            const game2 = row.querySelector('.game2').value;
+            const game3 = row.querySelector('.game3').value;
+            return game1 || game2 || game3;
+          });
+          
+          // Check if there are any scores for girls
+          const hasGirlsScores = Array.from(girlsRows).some(row => {
+            const dnp = row.querySelector('.dnp-checkbox').checked;
+            if (dnp) return false;
+            const game1 = row.querySelector('.game1').value;
+            const game2 = row.querySelector('.game2').value;
+            const game3 = row.querySelector('.game3').value;
+            return game1 || game2 || game3;
+          });
+          
+          let matchesCreated = 0;
+          
+          // Create boys match if there are scores
+          if (hasBoysScores) {
+            const boysMatchData = { ...baseMatchData, gender: 'boys' };
+            const boysResponse = await fetch(`${API_BASE}/api/matches`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(boysMatchData)
+            });
+            
+            if (!boysResponse.ok) throw new Error('Failed to create boys match');
+            const boysMatch = await boysResponse.json();
+            await savePlayerRecords(boysMatch.id, 'boys');
+            matchesCreated++;
+          }
+          
+          // Create girls match if there are scores
+          if (hasGirlsScores) {
+            const girlsMatchData = { ...baseMatchData, gender: 'girls' };
+            const girlsResponse = await fetch(`${API_BASE}/api/matches`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(girlsMatchData)
+            });
+            
+            if (!girlsResponse.ok) throw new Error('Failed to create girls match');
+            const girlsMatch = await girlsResponse.json();
+            await savePlayerRecords(girlsMatch.id, 'girls');
+            matchesCreated++;
+          }
+          
+          if (matchesCreated === 0) {
+            showMessage('Please enter scores for at least one player.', 'error');
+            return;
+          }
+          
+          showMessage(`${matchesCreated} match${matchesCreated > 1 ? 'es' : ''} saved successfully!`, 'success');
         } else {
-          // Create new match
+          // Create single gender match
+          const matchData = { ...baseMatchData, gender: currentGender };
+          
           const matchResponse = await fetch(`${API_BASE}/api/matches`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -901,39 +1190,11 @@
           if (!matchResponse.ok) throw new Error('Failed to create match');
           
           const match = await matchResponse.json();
-          matchId = match.id;
+          await savePlayerRecords(match.id, null);
+          
+          showMessage('Match saved successfully!', 'success');
         }
-
-        // Save player records
-        const rows = document.querySelectorAll('.player-row');
-        for (const row of rows) {
-          const dnp = row.querySelector('.dnp-checkbox').checked;
-          if (dnp) continue;
-
-          const playerId = row.dataset.playerId;
-          const game1 = row.querySelector('.game1').value;
-          const game2 = row.querySelector('.game2').value;
-          const game3 = row.querySelector('.game3').value;
-          const isVarsity = row.querySelector('.varsity-checkbox').checked;
-
-          // Only save if at least one score is entered
-          if (game1 || game2 || game3) {
-            await fetch(`${API_BASE}/api/records`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                matchId: matchId,
-                playerId: playerId,
-                game1: game1 ? parseInt(game1) : null,
-                game2: game2 ? parseInt(game2) : null,
-                game3: game3 ? parseInt(game3) : null,
-                isVarsity: isVarsity
-              })
-            });
-          }
-        }
-
-        showMessage(isEditing ? 'Match updated successfully!' : 'Match saved successfully!', 'success');
+        
         document.getElementById('matchModal').classList.remove('active');
         resetModal();
         loadMatches();
@@ -943,6 +1204,42 @@
         showMessage('Error saving match. Please try again.', 'error');
       }
     });
+
+    // Helper function to save player records
+    async function savePlayerRecords(matchId, genderFilter) {
+      const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+      const rows = document.querySelectorAll('.player-row');
+      
+      for (const row of rows) {
+        // Skip rows that don't match the gender filter (if specified)
+        if (genderFilter && row.dataset.gender !== genderFilter) continue;
+        
+        const dnp = row.querySelector('.dnp-checkbox').checked;
+        if (dnp) continue;
+
+        const playerId = row.dataset.playerId;
+        const game1 = row.querySelector('.game1').value;
+        const game2 = row.querySelector('.game2').value;
+        const game3 = row.querySelector('.game3').value;
+        const isVarsity = row.querySelector('.varsity-checkbox').checked;
+
+        // Only save if at least one score is entered
+        if (game1 || game2 || game3) {
+          await fetch(`${API_BASE}/api/records`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              matchId: matchId,
+              playerId: playerId,
+              game1: game1 ? parseInt(game1) : null,
+              game2: game2 ? parseInt(game2) : null,
+              game3: game3 ? parseInt(game3) : null,
+              isVarsity: isVarsity
+            })
+          });
+        }
+      }
+    }
 
     // Load matches
     async function loadMatches() {
@@ -1156,7 +1453,7 @@
         // Fill in form fields
         document.getElementById('matchDate').value = match.match_date;
         document.getElementById('opponent').value = match.opponent;
-        document.getElementById('location').value = match.location || '';
+        populateLocationDropdown(match.location || '');
         document.getElementById('result').value = match.result || '';
         document.getElementById('ourScore').value = match.our_score || '';
         document.getElementById('opponentScore').value = match.opponent_score || '';
@@ -1241,7 +1538,13 @@
       document.querySelector('.modal-header h2').textContent = 'Log New Match';
       document.querySelector('.submit-match-btn').textContent = 'Save Match';
       document.getElementById('matchForm').reset();
-      renderPlayersTable();
+      populateLocationDropdown();
+      hideAddLocation();
+      if (currentGender === 'all') {
+        renderAllPlayersTable();
+      } else {
+        renderPlayersTable();
+      }
     }
 
     // Initialize
