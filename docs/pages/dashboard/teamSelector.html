@@ -695,8 +695,8 @@
     </div>
 
     <div class="tabs">
-      <button class="tab-btn" data-gender="all">All</button>
-      <button class="tab-btn active" data-gender="boys">Boys Team</button>
+      <button class="tab-btn active" data-gender="all">All</button>
+      <button class="tab-btn" data-gender="boys">Boys Team</button>
       <button class="tab-btn" data-gender="girls">Girls Team</button>
     </div>
 
@@ -705,7 +705,7 @@
     <div id="message" class="message"></div>
 
     <div class="matches-section">
-      <h2 id="sectionTitle">Boys Recent Matches</h2>
+      <h2 id="sectionTitle">All Recent Matches</h2>
       <div id="matchesContainer">
         <div class="no-matches">
           <p>No matches recorded yet.</p>
@@ -803,7 +803,7 @@
   </div>
 
   <script>
-    let currentGender = 'boys';
+    let currentGender = 'all';
     let coachId = null;
     let players = [];
     let allPlayers = { boys: [], girls: [] };
@@ -1134,8 +1134,15 @@
             method: 'DELETE'
           });
           
-          // Save player records for this single match
-          await savePlayerRecords(editingMatchId, null);
+          // Save player records for this single match and get total wood
+          const totalWood = await savePlayerRecords(editingMatchId, null);
+          
+          // Update match with recalculated total wood
+          await fetch(`${API_BASE}/api/matches/${editingMatchId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ourScore: totalWood })
+          });
           
           showMessage('Match updated successfully!', 'success');
         } else if (isAllMode) {
@@ -1176,7 +1183,14 @@
             
             if (!boysResponse.ok) throw new Error('Failed to create boys match');
             const boysMatch = await boysResponse.json();
-            await savePlayerRecords(boysMatch.id, 'boys');
+            const boysTotalWood = await savePlayerRecords(boysMatch.id, 'boys');
+            
+            // Update match with total wood
+            await fetch(`${API_BASE}/api/matches/${boysMatch.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ourScore: boysTotalWood })
+            });
             matchesCreated++;
           }
           
@@ -1191,7 +1205,14 @@
             
             if (!girlsResponse.ok) throw new Error('Failed to create girls match');
             const girlsMatch = await girlsResponse.json();
-            await savePlayerRecords(girlsMatch.id, 'girls');
+            const girlsTotalWood = await savePlayerRecords(girlsMatch.id, 'girls');
+            
+            // Update match with total wood
+            await fetch(`${API_BASE}/api/matches/${girlsMatch.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ourScore: girlsTotalWood })
+            });
             matchesCreated++;
           }
           
@@ -1214,7 +1235,14 @@
           if (!matchResponse.ok) throw new Error('Failed to create match');
           
           const match = await matchResponse.json();
-          await savePlayerRecords(match.id, null);
+          const totalWood = await savePlayerRecords(match.id, null);
+          
+          // Update match with total wood
+          await fetch(`${API_BASE}/api/matches/${match.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ourScore: totalWood })
+          });
           
           showMessage('Match saved successfully!', 'success');
         }
@@ -1229,10 +1257,11 @@
       }
     });
 
-    // Helper function to save player records
+    // Helper function to save player records and return total wood
     async function savePlayerRecords(matchId, genderFilter) {
       const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
       const rows = document.querySelectorAll('.player-row');
+      let totalWood = 0;
       
       for (const row of rows) {
         // Skip rows that don't match the gender filter (if specified)
@@ -1249,6 +1278,15 @@
 
         // Only save if at least one score is entered
         if (game1 || game2 || game3) {
+          const g1 = game1 ? parseInt(game1) : 0;
+          const g2 = game2 ? parseInt(game2) : 0;
+          const g3 = game3 ? parseInt(game3) : 0;
+          
+          // Add to total wood if varsity
+          if (isVarsity) {
+            totalWood += g1 + g2 + g3;
+          }
+          
           await fetch(`${API_BASE}/api/records`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1263,6 +1301,8 @@
           });
         }
       }
+      
+      return totalWood;
     }
 
     // Load matches

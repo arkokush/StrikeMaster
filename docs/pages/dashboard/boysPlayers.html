@@ -434,7 +434,8 @@
     </div>
 
     <div class="gender-toggle">
-      <button class="gender-btn active" data-gender="boys">Boys</button>
+      <button class="gender-btn active" data-gender="all">All</button>
+      <button class="gender-btn" data-gender="boys">Boys</button>
       <button class="gender-btn" data-gender="girls">Girls</button>
     </div>
 
@@ -467,7 +468,7 @@
     </div>
 
     <div class="players-section">
-      <h3 id="playersTitle">Boys Players</h3>
+      <h3 id="playersTitle">All Players</h3>
       <div id="playersList">
         <div class="no-players">Loading players...</div>
       </div>
@@ -548,7 +549,7 @@
   </div>
 
   <script>
-    let currentGender = 'boys';
+    let currentGender = 'all';
     let coachId = null;
     let players = [];
     let selectedPlayerId = null;
@@ -590,6 +591,7 @@
         btn.classList.add('active');
         currentGender = btn.dataset.gender;
         document.getElementById('playersTitle').textContent = 
+          currentGender === 'all' ? 'All Players' : 
           currentGender === 'boys' ? 'Boys Players' : 'Girls Players';
         closeStatsPanel();
         loadPlayers();
@@ -661,11 +663,29 @@
       
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
-        const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
         
-        if (!response.ok) throw new Error('Failed to fetch players');
-        
-        players = await response.json();
+        // If "all" is selected, load both boys and girls
+        let allPlayers = [];
+        if (currentGender === 'all') {
+          const [boysRes, girlsRes] = await Promise.all([
+            fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=boys`),
+            fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=girls`)
+          ]);
+          
+          if (boysRes.ok) {
+            const boysPlayers = await boysRes.json();
+            allPlayers = [...allPlayers, ...boysPlayers.map(p => ({...p, _gender: 'boys'}))];
+          }
+          if (girlsRes.ok) {
+            const girlsPlayers = await girlsRes.json();
+            allPlayers = [...allPlayers, ...girlsPlayers.map(p => ({...p, _gender: 'girls'}))];
+          }
+          players = allPlayers;
+        } else {
+          const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
+          if (!response.ok) throw new Error('Failed to fetch players');
+          players = await response.json();
+        }
 
         if (!players || players.length === 0) {
           container.innerHTML = '<div class="no-players">No players yet. Add your first player above!</div>';
@@ -675,7 +695,7 @@
         container.innerHTML = players.map(player => `
           <div class="player-card" data-player-id="${player.id}" onclick="selectPlayer('${player.id}')">
             <div class="player-info">
-              <h4>${player.first_name} ${player.last_name}</h4>
+              <h4>${player.first_name} ${player.last_name} ${player._gender ? (player._gender === 'boys' ? '♂' : '♀') : ''}</h4>
               <span>Class of ${player.grad_year || 'N/A'}</span>
             </div>
             <div class="player-actions">

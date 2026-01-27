@@ -179,11 +179,13 @@
 
      <!-- Password -->
      <div class="form-group">
-       <label for="password">Password</label>
-       <input type="password" id="password" value="" readonly placeholder="********">
-       <span class="edit-icon" onclick="enableEdit('password')">&#9998;</span>
+       <label for="password">New Password</label>
+       <input type="password" id="password" value="" placeholder="Enter new password to change">
        <div style="margin-top:6px;" class="showPasswordContainer">
-         Show Password <input type="checkbox" id="showPassword">
+         <label style="font-weight: normal; cursor: pointer;">
+           <input type="checkbox" id="showPassword" style="width: auto; margin-right: 5px;">
+           Show Password
+         </label>
        </div>
      </div>
 
