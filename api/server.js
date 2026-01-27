@@ -158,23 +158,23 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Student Sign In with Team Code
-app.post('/api/auth/student-login', async (req, res) => {
+// Student Sign Up with Email, Password, and Team Code
+app.post('/api/auth/student-signup', async (req, res) => {
   try {
     if (!supabase) {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { teamCode } = req.body;
+    const { email, password, teamCode } = req.body;
 
-    if (!teamCode) {
-      return res.status(400).json({ error: 'Team code required' });
+    if (!email || !password || !teamCode) {
+      return res.status(400).json({ error: 'Email, password, and team code required' });
     }
 
-    // Find coach by team code
+    // First, find coach by team code to get coach_id
     const { data: coach, error: coachError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, team_name, first_name, last_name')
       .eq('team_code', teamCode.toUpperCase())
       .single();
 
@@ -182,14 +182,97 @@ app.post('/api/auth/student-login', async (req, res) => {
       return res.status(404).json({ error: 'Invalid team code' });
     }
 
+    // Check if student email already exists
+    const { data: existingStudent } = await supabase
+      .from('students')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (existingStudent) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Create student record
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .insert([{
+        email: email.toLowerCase(),
+        password_hash: password, // In production, hash this!
+        coach_id: coach.id,
+        team_code: teamCode.toUpperCase()
+      }])
+      .select()
+      .single();
+
+    if (studentError) {
+      console.error('Student signup error:', studentError);
+      return res.status(500).json({ error: 'Failed to create account' });
+    }
+
     res.json({
       success: true,
-      coach: {
-        id: coach.id,
-        name: `${coach.first_name} ${coach.last_name}`.trim(),
-        team_name: coach.team_name
-      },
-      accessLevel: 'student'
+      user: {
+        id: student.id,
+        email: student.email,
+        coach_id: coach.id,
+        team_name: coach.team_name,
+        role: 'student'
+      }
+    });
+
+  } catch (error) {
+    console.error('Student signup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Student Sign In with Email and Password
+app.post('/api/auth/student-login', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    // Find student by email
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (studentError || !student) {
+      return res.status(404).json({ error: 'Invalid email or password' });
+    }
+
+    // Check password (in production, use proper password hashing)
+    if (student.password_hash !== password) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Get coach info
+    const { data: coach } = await supabase
+      .from('users')
+      .select('id, team_name, first_name, last_name, team_code')
+      .eq('id', student.coach_id)
+      .single();
+
+    res.json({
+      success: true,
+      user: {
+        id: coach?.id || student.coach_id,
+        email: student.email,
+        coach_id: student.coach_id,
+        team_name: coach?.team_name,
+        team_code: coach?.team_code,
+        role: 'student'
+      }
     });
 
   } catch (error) {

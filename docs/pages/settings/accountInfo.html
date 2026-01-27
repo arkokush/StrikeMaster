@@ -199,9 +199,12 @@
 
   <script>
     // Require authentication
-    if (!auth.requireCoach('../auth/teacherLogin.html')) {
+    if (!auth.requireAuth('../auth/teacherLogin.html')) {
       throw new Error('Not authenticated');
     }
+
+    // Check if user is a student
+    const isStudent = auth.isStudent();
 
     // Setup logout button
     document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -213,13 +216,35 @@
     // Load user data from session
     const currentUser = auth.getUser();
     if (currentUser) {
-      document.getElementById('displayName').value = auth.getDisplayName();
+      document.getElementById('displayName').value = isStudent ? 'Student' : auth.getDisplayName();
       document.getElementById('email').value = currentUser.email || '';
-      document.getElementById('userCode').value = currentUser.coach_code || 'N/A';
+      document.getElementById('userCode').value = currentUser.team_code || 'N/A';
     }
 
-    // Enable editing when clicking the pencil icon
+    // For students, hide editable features
+    if (isStudent) {
+      // Hide edit icons
+      document.querySelectorAll('.edit-icon').forEach(icon => icon.style.display = 'none');
+      // Hide save button
+      document.getElementById('saveBtn').style.display = 'none';
+      // Hide password section
+      const passwordRow = document.querySelector('.form-group:has(#password)');
+      if (passwordRow) passwordRow.style.display = 'none';
+      // Hide profile upload
+      document.getElementById('profileUpload').style.display = 'none';
+      // Add read-only label
+      const accountSection = document.querySelector('.account-section');
+      if (accountSection) {
+        const notice = document.createElement('div');
+        notice.style.cssText = 'background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #666; text-align: center;';
+        notice.textContent = 'Student View (Read-Only)';
+        accountSection.prepend(notice);
+      }
+    }
+
+    // Enable editing when clicking the pencil icon (coaches only)
     function enableEdit(fieldId) {
+      if (isStudent) return;
       const field = document.getElementById(fieldId);
       field.removeAttribute('readonly');
       field.focus();
@@ -229,29 +254,34 @@
     const showPasswordCheckbox = document.getElementById('showPassword');
     const passwordField = document.getElementById('password');
 
-    showPasswordCheckbox.addEventListener('change', () => {
-      if (showPasswordCheckbox.checked) {
-        passwordField.type = 'text';
-      } else {
-        passwordField.type = 'password';
-      }
-    });
+    if (showPasswordCheckbox && passwordField) {
+      showPasswordCheckbox.addEventListener('change', () => {
+        if (showPasswordCheckbox.checked) {
+          passwordField.type = 'text';
+        } else {
+          passwordField.type = 'password';
+        }
+      });
+    }
 
     // Profile picture preview
     const profileUpload = document.getElementById('profileUpload');
     const profileImg = document.getElementById('profileImg');
 
-    profileUpload.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => profileImg.src = e.target.result;
-        reader.readAsDataURL(file);
-      }
-    });
+    if (profileUpload && profileImg) {
+      profileUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = e => profileImg.src = e.target.result;
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
-    // Save button functionality (placeholder)
-    document.getElementById('saveBtn').addEventListener('click', () => {
+    // Save button functionality (coaches only)
+    document.getElementById('saveBtn')?.addEventListener('click', () => {
+      if (isStudent) return;
       const name = document.getElementById('displayName').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;

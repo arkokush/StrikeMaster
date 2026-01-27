@@ -18,20 +18,33 @@ const auth = {
     return localStorage.getItem('bowling_token');
   },
 
-  // Check if user is logged in (has user data and token)
+  // Get user role (coach or student)
+  getRole: function() {
+    return localStorage.getItem('bowling_role') || 'coach';
+  },
+
+  // Check if user is logged in (has user data)
   isLoggedIn: function() {
     const user = this.getUser();
-    const token = this.getToken();
     // User is logged in if they have user data with an id
     return !!(user && user.id);
   },
 
-  // Check if user is a coach/director
+  // Check if user is a student (read-only access)
+  isStudent: function() {
+    return this.getRole() === 'student';
+  },
+
+  // Check if user is a coach/director (full access)
   isCoach: function() {
     const user = this.getUser();
-    // Consider logged in users as coaches by default if they have an id
-    // (since only coaches can sign up in this system)
-    return !!(user && user.id);
+    // User must be logged in AND not a student
+    return !!(user && user.id) && this.getRole() !== 'student';
+  },
+
+  // Check if user can edit (coaches only, not students)
+  canEdit: function() {
+    return this.isLoggedIn() && !this.isStudent();
   },
 
   // Require authentication - redirect to login if not authenticated
@@ -45,7 +58,6 @@ const auth = {
   },
 
   // Require coach role - redirect to login if not a coach
-  // In this app, all logged in users are coaches
   requireCoach: function(loginUrl) {
     if (!this.isLoggedIn()) {
       const defaultLoginUrl = loginUrl || '../../pages/auth/teacherLogin.html';
@@ -59,6 +71,7 @@ const auth = {
   logout: function(redirectUrl) {
     localStorage.removeItem('bowling_user');
     localStorage.removeItem('bowling_token');
+    localStorage.removeItem('bowling_role');
     const defaultRedirectUrl = redirectUrl || '../../index.html';
     window.location.href = defaultRedirectUrl;
   },

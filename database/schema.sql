@@ -8,6 +8,7 @@
 DROP TABLE IF EXISTS records CASCADE;
 DROP TABLE IF EXISTS matches CASCADE;
 DROP TABLE IF EXISTS players CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS player_scores CASCADE;
 DROP TABLE IF EXISTS player_match_summary CASCADE;
@@ -30,6 +31,22 @@ CREATE TABLE users (
 
 -- Index for fast team code lookups
 CREATE INDEX idx_users_team_code ON users(team_code);
+
+-- =====================================================
+-- 2. STUDENTS TABLE (Students linked to coaches via team_code)
+-- =====================================================
+CREATE TABLE students (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  team_code VARCHAR(10) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for fast student lookups
+CREATE INDEX idx_students_email ON students(email);
+CREATE INDEX idx_students_coach ON students(coach_id);
 
 -- =====================================================
 -- 2. PLAYERS TABLE (Players with gender, name, team)
@@ -94,6 +111,7 @@ CREATE INDEX idx_records_player ON records(player_id);
 -- 5. Enable Row Level Security
 -- =====================================================
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE records ENABLE ROW LEVEL SECURITY;
@@ -102,6 +120,7 @@ ALTER TABLE records ENABLE ROW LEVEL SECURITY;
 -- 6. Create permissive policies (service role access)
 -- =====================================================
 CREATE POLICY "Service role full access" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON players FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON matches FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON records FOR ALL USING (true) WITH CHECK (true);

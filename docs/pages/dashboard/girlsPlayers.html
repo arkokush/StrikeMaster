@@ -790,7 +790,7 @@
           totalAll += gameTotal / gamesPlayed;
           countAll++;
         }
-      });
+      };
 
       document.getElementById('totalMatches').textContent = matchCount;
       document.getElementById('avgGame1').textContent = countG1 > 0 ? (totalG1 / countG1).toFixed(1) : '0.0';
@@ -846,7 +846,7 @@
           </tr>
         `;
       }).join('');
-    }
+    
 
     // Add player
     document.getElementById('addPlayerBtn').addEventListener('click', async () => {
@@ -919,6 +919,24 @@
       }
     }
 
+    // Check if user is a student (read-only access)
+    function isStudentMode() {
+      return localStorage.getItem('bowling_role') === 'student';
+    }
+
+    // Apply student mode restrictions
+    function applyStudentMode() {
+      if (isStudentMode()) {
+        // Hide add player section
+        const addSection = document.querySelector('.add-player-section');
+        if (addSection) addSection.style.display = 'none';
+
+        // Hide remove player buttons in stats panel
+        const removeBtn = document.getElementById('removePlayerBtn');
+        if (removeBtn) removeBtn.style.display = 'none';
+      }
+    }
+
     // Show message
     function showMessage(text, type) {
       const msg = document.getElementById('message');
@@ -930,6 +948,7 @@
     // Initialize
     checkAuth().then(user => {
       if (user) {
+        applyStudentMode();
         loadPlayers();
       }
     });

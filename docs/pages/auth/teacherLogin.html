@@ -64,6 +64,7 @@
           console.log('Storing user data:', data.user);
           console.log('User ID:', data.user.id);
           localStorage.setItem('bowling_user', JSON.stringify(data.user));
+          localStorage.setItem('bowling_role', 'coach'); // Coaches have full access
         }
         
         // Verify storage

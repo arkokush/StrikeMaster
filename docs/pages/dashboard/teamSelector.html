@@ -975,6 +975,8 @@
       e.preventDefault();
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('bowling_user');
+      localStorage.removeItem('bowling_role');
+      localStorage.removeItem('bowling_token');
       window.location.href = '../auth/teacherLogin.html';
     });
 
@@ -1411,10 +1413,10 @@
                   </div>
                 ` : '<p style="text-align: center; color: #888; padding: 20px;">No player scores recorded</p>'}
                 ${match.comments ? `<div class="match-comments"><strong>Notes:</strong> ${match.comments}</div>` : ''}
-                <div class="match-actions">
+                ${!isStudentMode() ? `<div class="match-actions">
                   <button class="edit-match-btn" onclick="event.stopPropagation(); editMatch('${match.id}')">Edit Match</button>
                   <button class="delete-match-btn" onclick="event.stopPropagation(); deleteMatch('${match.id}')">Delete</button>
-                </div>
+                </div>` : ''}
               </div>
             </div>
           `;
@@ -1569,9 +1571,30 @@
       }
     }
 
+    // Check if user is a student (read-only access)
+    function isStudentMode() {
+      return localStorage.getItem('bowling_role') === 'student';
+    }
+
+    // Apply student mode restrictions (hide edit controls)
+    function applyStudentMode() {
+      if (isStudentMode()) {
+        // Hide "Log New Match" button
+        const logBtn = document.getElementById('logMatchBtn');
+        if (logBtn) logBtn.style.display = 'none';
+
+        // Add a read-only notice
+        const noticeDiv = document.createElement('div');
+        noticeDiv.style.cssText = 'text-align: center; padding: 10px; background: #f0f0f0; color: #666; margin-bottom: 20px; border-radius: 8px;';
+        noticeDiv.textContent = 'Student View (Read-Only)';
+        document.querySelector('.tabs').after(noticeDiv);
+      }
+    }
+
     // Initialize
     checkAuth().then(user => {
       if (user) {
+        applyStudentMode();
         loadSavedLocations();
         loadMatches();
         loadPlayers();
