@@ -219,6 +219,111 @@ app.get('/api/auth/profile/:userId', async (req, res) => {
   }
 });
 
+// ==================== LOCATIONS ENDPOINTS ====================
+
+// Get saved locations for a coach
+app.get('/api/locations', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId } = req.query;
+    if (!coachId) {
+      return res.status(400).json({ error: 'coachId is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('saved_locations')
+      .eq('id', coachId)
+      .single();
+
+    if (error) throw error;
+    
+    // Return default locations if none saved
+    const defaultLocations = ['Montvale Lanes', 'Bowler City', 'Lodi Lanes', 'Parkway Lanes', 'Holiday Bowl'];
+    res.json(data?.saved_locations || defaultLocations);
+
+  } catch (error) {
+    console.error('Get locations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Save locations for a coach
+app.put('/api/locations', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId, locations } = req.body;
+    if (!coachId || !locations) {
+      return res.status(400).json({ error: 'coachId and locations are required' });
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update({ saved_locations: locations })
+      .eq('id', coachId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data.saved_locations || locations);
+
+  } catch (error) {
+    console.error('Save locations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add a single location
+app.post('/api/locations', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { coachId, location } = req.body;
+    if (!coachId || !location) {
+      return res.status(400).json({ error: 'coachId and location are required' });
+    }
+
+    // Get current locations
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('saved_locations')
+      .eq('id', coachId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const defaultLocations = ['Montvale Lanes', 'Bowler City', 'Lodi Lanes', 'Parkway Lanes', 'Holiday Bowl'];
+    const currentLocations = userData?.saved_locations || defaultLocations;
+    
+    // Add new location if not already present
+    if (!currentLocations.includes(location)) {
+      currentLocations.push(location);
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update({ saved_locations: currentLocations })
+      .eq('id', coachId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data.saved_locations || currentLocations);
+
+  } catch (error) {
+    console.error('Add location error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== PLAYERS ENDPOINTS ====================
 
 // Get all players for a coach (filtered by gender)
@@ -557,7 +662,7 @@ app.get('/api/players/:playerId/records', async (req, res) => {
       .from('records')
       .select(`
         *,
-        match:matches(id, opponent, match_date, gender)
+        match:matches(id, opponent, match_date, gender, location)
       `)
       .eq('player_id', req.params.playerId)
       .order('created_at', { ascending: false });

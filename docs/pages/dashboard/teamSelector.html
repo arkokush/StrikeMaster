@@ -837,26 +837,30 @@
 
     // ==================== LOCATION MANAGEMENT ====================
     
-    // Get saved locations from localStorage
-    function getSavedLocations() {
-      const locations = localStorage.getItem('bowling_locations');
-      return locations ? JSON.parse(locations) : ['Montvale Lanes', 'Bowler City', 'Lodi Lanes', 'Parkway Lanes', 'Holiday Bowl'];
-    }
+    let savedLocations = ['Montvale Lanes', 'Bowler City', 'Lodi Lanes', 'Parkway Lanes', 'Holiday Bowl'];
 
-    // Save locations to localStorage
-    function saveSavedLocations(locations) {
-      localStorage.setItem('bowling_locations', JSON.stringify(locations));
+    // Load saved locations from Supabase
+    async function loadSavedLocations() {
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/locations?coachId=${coachId}`);
+        if (response.ok) {
+          savedLocations = await response.json();
+        }
+      } catch (error) {
+        console.error('Error loading locations:', error);
+      }
+      populateLocationDropdown();
     }
 
     // Populate location dropdown
     function populateLocationDropdown(selectedValue = '') {
       const locationSelect = document.getElementById('location');
-      const locations = getSavedLocations();
       
       // Clear existing options except first
       locationSelect.innerHTML = '<option value="">Select location...</option>';
       
-      locations.sort().forEach(loc => {
+      savedLocations.sort().forEach(loc => {
         const option = document.createElement('option');
         option.value = loc;
         option.textContent = loc;
@@ -877,23 +881,41 @@
       document.getElementById('newLocation').value = '';
     }
 
-    // Save new location
-    function saveNewLocation() {
+    // Save new location to Supabase
+    async function saveNewLocation() {
       const newLocation = document.getElementById('newLocation').value.trim();
       if (!newLocation) return;
 
-      const locations = getSavedLocations();
-      if (!locations.includes(newLocation)) {
-        locations.push(newLocation);
-        saveSavedLocations(locations);
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/locations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            coachId: coachId,
+            location: newLocation
+          })
+        });
+        
+        if (response.ok) {
+          savedLocations = await response.json();
+        } else {
+          // Fallback: add locally
+          if (!savedLocations.includes(newLocation)) {
+            savedLocations.push(newLocation);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving location:', error);
+        // Fallback: add locally
+        if (!savedLocations.includes(newLocation)) {
+          savedLocations.push(newLocation);
+        }
       }
       
       populateLocationDropdown(newLocation);
       hideAddLocation();
     }
-
-    // Initialize location dropdown
-    populateLocationDropdown();
 
     // Check authentication
     async function checkAuth() {
@@ -1550,6 +1572,7 @@
     // Initialize
     checkAuth().then(user => {
       if (user) {
+        loadSavedLocations();
         loadMatches();
         loadPlayers();
       }
