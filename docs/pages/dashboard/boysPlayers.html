@@ -259,6 +259,26 @@
       color: white;
     }
 
+    .filter-row {
+      padding: 10px 20px;
+      background: var(--content-bg);
+      border-bottom: 1px solid #eee;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-row select {
+      padding: 8px 12px;
+      border: 1px solid var(--accent-color);
+      border-radius: 5px;
+      background: var(--card-bg);
+      color: var(--text-color);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
     /* Stats Summary */
     .stats-summary {
       display: grid;
@@ -467,6 +487,20 @@
         <button class="filter-btn" data-filter="jv">JV Only</button>
       </div>
 
+      <div class="filter-row">
+        <span class="filter-label">Location:</span>
+        <select id="locationFilter">
+          <option value="all">All Locations</option>
+        </select>
+        <span class="filter-label">Game:</span>
+        <select id="gameFilter">
+          <option value="all">All Games</option>
+          <option value="game1">Game 1 Only</option>
+          <option value="game2">Game 2 Only</option>
+          <option value="game3">Game 3 Only</option>
+        </select>
+      </div>
+
       <div class="stats-summary" id="statsSummary">
         <div class="summary-box">
           <div class="summary-label">Matches</div>
@@ -520,6 +554,8 @@
     let selectedPlayerId = null;
     let playerRecords = [];
     let currentFilter = 'all';
+    let currentLocationFilter = 'all';
+    let currentGameFilter = 'all';
 
     // Team logo mapping for opponents - uses centralized teams.js config
     // getTeamLogo function is provided by teams.js
@@ -570,6 +606,18 @@
       });
     });
 
+    // Location filter
+    document.getElementById('locationFilter').addEventListener('change', (e) => {
+      currentLocationFilter = e.target.value;
+      displayPlayerStats();
+    });
+
+    // Game filter
+    document.getElementById('gameFilter').addEventListener('change', (e) => {
+      currentGameFilter = e.target.value;
+      displayPlayerStats();
+    });
+
     // Close stats panel
     document.getElementById('closeStats').addEventListener('click', closeStatsPanel);
 
@@ -577,6 +625,26 @@
       document.getElementById('statsPanel').classList.remove('active');
       document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
       selectedPlayerId = null;
+    }
+
+    // Populate location filter dropdown
+    function populateLocationFilter() {
+      const locationSelect = document.getElementById('locationFilter');
+      const locations = new Set();
+      
+      playerRecords.forEach(r => {
+        if (r.match && r.match.location) {
+          locations.add(r.match.location);
+        }
+      });
+      
+      locationSelect.innerHTML = '<option value="all">All Locations</option>';
+      Array.from(locations).sort().forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.textContent = loc;
+        locationSelect.appendChild(option);
+      });
     }
 
     // Logout
@@ -644,6 +712,15 @@
           playerRecords = [];
         }
 
+        // Populate location filter dropdown
+        populateLocationFilter();
+        
+        // Reset filters
+        currentLocationFilter = 'all';
+        currentGameFilter = 'all';
+        document.getElementById('locationFilter').value = 'all';
+        document.getElementById('gameFilter').value = 'all';
+
         displayPlayerStats();
         document.getElementById('statsPanel').classList.add('active');
         
@@ -662,23 +739,47 @@
     function displayPlayerStats() {
       let filteredRecords = playerRecords;
 
+      // Apply varsity/JV filter
       if (currentFilter === 'varsity') {
-        filteredRecords = playerRecords.filter(r => r.is_varsity === true);
+        filteredRecords = filteredRecords.filter(r => r.is_varsity === true);
       } else if (currentFilter === 'jv') {
-        filteredRecords = playerRecords.filter(r => r.is_varsity === false);
+        filteredRecords = filteredRecords.filter(r => r.is_varsity === false);
       }
 
-      // Calculate averages
+      // Apply location filter
+      if (currentLocationFilter !== 'all') {
+        filteredRecords = filteredRecords.filter(r => r.match && r.match.location === currentLocationFilter);
+      }
+
+      // Calculate averages based on game filter
       const matchCount = filteredRecords.length;
       let totalG1 = 0, totalG2 = 0, totalG3 = 0, totalAll = 0;
       let countG1 = 0, countG2 = 0, countG3 = 0, countAll = 0;
 
       filteredRecords.forEach(r => {
-        if (r.game1) { totalG1 += r.game1; countG1++; }
-        if (r.game2) { totalG2 += r.game2; countG2++; }
-        if (r.game3) { totalG3 += r.game3; countG3++; }
-        const gameTotal = (r.game1 || 0) + (r.game2 || 0) + (r.game3 || 0);
-        const gamesPlayed = (r.game1 ? 1 : 0) + (r.game2 ? 1 : 0) + (r.game3 ? 1 : 0);
+        if (currentGameFilter === 'all' || currentGameFilter === 'game1') {
+          if (r.game1) { totalG1 += r.game1; countG1++; }
+        }
+        if (currentGameFilter === 'all' || currentGameFilter === 'game2') {
+          if (r.game2) { totalG2 += r.game2; countG2++; }
+        }
+        if (currentGameFilter === 'all' || currentGameFilter === 'game3') {
+          if (r.game3) { totalG3 += r.game3; countG3++; }
+        }
+        
+        // Calculate overall average based on game filter
+        let gameTotal = 0, gamesPlayed = 0;
+        if (currentGameFilter === 'all') {
+          if (r.game1) { gameTotal += r.game1; gamesPlayed++; }
+          if (r.game2) { gameTotal += r.game2; gamesPlayed++; }
+          if (r.game3) { gameTotal += r.game3; gamesPlayed++; }
+        } else if (currentGameFilter === 'game1' && r.game1) {
+          gameTotal = r.game1; gamesPlayed = 1;
+        } else if (currentGameFilter === 'game2' && r.game2) {
+          gameTotal = r.game2; gamesPlayed = 1;
+        } else if (currentGameFilter === 'game3' && r.game3) {
+          gameTotal = r.game3; gamesPlayed = 1;
+        }
         if (gamesPlayed > 0) {
           totalAll += gameTotal / gamesPlayed;
           countAll++;
