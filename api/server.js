@@ -470,7 +470,7 @@ app.put('/api/matches/:id', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { opponent, matchDate, location, ourScore, opponentScore, result, isComplete } = req.body;
+    const { opponent, matchDate, location, ourScore, opponentScore, result, isComplete, comments } = req.body;
 
     const updateData = {};
     if (opponent !== undefined) updateData.opponent = opponent;
@@ -480,6 +480,7 @@ app.put('/api/matches/:id', async (req, res) => {
     if (opponentScore !== undefined) updateData.opponent_score = parseInt(opponentScore);
     if (result !== undefined) updateData.result = result;
     if (isComplete !== undefined) updateData.is_complete = isComplete;
+    if (comments !== undefined) updateData.comments = comments;
 
     const { data, error } = await supabase
       .from('matches')
@@ -690,6 +691,27 @@ app.delete('/api/records/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Delete record error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete all records for a match
+app.delete('/api/records/match/:matchId', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { error } = await supabase
+      .from('records')
+      .delete()
+      .eq('match_id', req.params.matchId);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'All records for match deleted' });
+
+  } catch (error) {
+    console.error('Delete records by match error:', error);
     res.status(400).json({ error: error.message });
   }
 });

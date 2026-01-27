@@ -476,6 +476,66 @@
       border-radius: 12px;
     }
 
+    .edit-match-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: opacity 0.2s;
+    }
+
+    .edit-match-btn:hover {
+      opacity: 0.85;
+    }
+
+    .delete-match-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .delete-match-btn:hover {
+      opacity: 0.85;
+    }
+
+    .match-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .gender-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .gender-badge.boys {
+      background: #cce5ff;
+      color: #004085;
+    }
+
+    .gender-badge.girls {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
     .no-matches p {
       font-size: 16px;
       margin-bottom: 20px;
@@ -548,6 +608,7 @@
     </div>
 
     <div class="tabs">
+      <button class="tab-btn" data-gender="all">All</button>
       <button class="tab-btn active" data-gender="boys">Boys Team</button>
       <button class="tab-btn" data-gender="girls">Girls Team</button>
     </div>
@@ -700,25 +761,29 @@
         btn.classList.add('active');
         currentGender = btn.dataset.gender;
         document.getElementById('sectionTitle').textContent = 
-          currentGender === 'boys' ? 'Boys Recent Matches' : 'Girls Recent Matches';
+          currentGender === 'boys' ? 'Boys Recent Matches' : 
+          currentGender === 'girls' ? 'Girls Recent Matches' : 'All Recent Matches';
         loadMatches();
-        loadPlayers();
+        if (currentGender !== 'all') loadPlayers();
       });
     });
 
     // Modal controls
     document.getElementById('logMatchBtn').addEventListener('click', () => {
+      resetModal();
       document.getElementById('matchModal').classList.add('active');
       document.getElementById('matchDate').valueAsDate = new Date();
     });
 
     document.getElementById('closeModal').addEventListener('click', () => {
       document.getElementById('matchModal').classList.remove('active');
+      resetModal();
     });
 
     document.getElementById('matchModal').addEventListener('click', (e) => {
       if (e.target === document.getElementById('matchModal')) {
         document.getElementById('matchModal').classList.remove('active');
+        resetModal();
       }
     });
 
@@ -790,9 +855,12 @@
     document.getElementById('matchForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
+      const isEditing = editingMatchId !== null;
+      const matchGender = isEditing ? editingMatchGender : currentGender;
+      
       const matchData = {
         coachId: coachId,
-        gender: currentGender,
+        gender: matchGender,
         opponent: document.getElementById('opponent').value,
         matchDate: document.getElementById('matchDate').value,
         location: document.getElementById('location').value,
@@ -805,16 +873,36 @@
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
         
-        // Create match
-        const matchResponse = await fetch(`${API_BASE}/api/matches`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(matchData)
-        });
-
-        if (!matchResponse.ok) throw new Error('Failed to create match');
+        let matchId;
         
-        const match = await matchResponse.json();
+        if (isEditing) {
+          // Update existing match
+          const matchResponse = await fetch(`${API_BASE}/api/matches/${editingMatchId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(matchData)
+          });
+
+          if (!matchResponse.ok) throw new Error('Failed to update match');
+          matchId = editingMatchId;
+          
+          // Delete existing records for this match (we'll recreate them)
+          await fetch(`${API_BASE}/api/records/match/${matchId}`, {
+            method: 'DELETE'
+          });
+        } else {
+          // Create new match
+          const matchResponse = await fetch(`${API_BASE}/api/matches`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(matchData)
+          });
+
+          if (!matchResponse.ok) throw new Error('Failed to create match');
+          
+          const match = await matchResponse.json();
+          matchId = match.id;
+        }
 
         // Save player records
         const rows = document.querySelectorAll('.player-row');
@@ -834,7 +922,7 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                matchId: match.id,
+                matchId: matchId,
                 playerId: playerId,
                 game1: game1 ? parseInt(game1) : null,
                 game2: game2 ? parseInt(game2) : null,
@@ -845,9 +933,9 @@
           }
         }
 
-        showMessage('Match saved successfully!', 'success');
+        showMessage(isEditing ? 'Match updated successfully!' : 'Match saved successfully!', 'success');
         document.getElementById('matchModal').classList.remove('active');
-        document.getElementById('matchForm').reset();
+        resetModal();
         loadMatches();
 
       } catch (error) {
@@ -862,7 +950,11 @@
       
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
-        const response = await fetch(`${API_BASE}/api/matches?coachId=${coachId}&gender=${currentGender}`);
+        let url = `${API_BASE}/api/matches?coachId=${coachId}`;
+        if (currentGender !== 'all') {
+          url += `&gender=${currentGender}`;
+        }
+        const response = await fetch(url);
         
         if (!response.ok) throw new Error('Failed to fetch matches');
         
@@ -917,13 +1009,15 @@
           // Get opponent logo
           const opponentLogo = getOpponentLogo(match.opponent);
 
+          const genderBadge = currentGender === 'all' ? `<span class="gender-badge ${match.gender}">${match.gender === 'boys' ? 'Boys' : 'Girls'}</span>` : '';
+
           html += `
             <div class="match-card" data-match-id="${match.id}">
               <div class="match-header" onclick="toggleMatch('${match.id}')">
                 <div class="match-info">
                   ${opponentLogo ? `<img src="${opponentLogo}" alt="${match.opponent}" class="opponent-logo">` : ''}
                   <div class="match-text">
-                    <div class="match-date">${formattedDate}</div>
+                    <div class="match-date">${formattedDate}${genderBadge}</div>
                     <div class="match-opponent">vs ${match.opponent}</div>
                     ${match.location ? `<div class="match-location">📍 ${match.location}</div>` : ''}
                   </div>
@@ -998,6 +1092,10 @@
                   </div>
                 ` : '<p style="text-align: center; color: #888; padding: 20px;">No player scores recorded</p>'}
                 ${match.comments ? `<div class="match-comments"><strong>Notes:</strong> ${match.comments}</div>` : ''}
+                <div class="match-actions">
+                  <button class="edit-match-btn" onclick="event.stopPropagation(); editMatch('${match.id}')">✏️ Edit Match</button>
+                  <button class="delete-match-btn" onclick="event.stopPropagation(); deleteMatch('${match.id}')">🗑️ Delete</button>
+                </div>
               </div>
             </div>
           `;
@@ -1027,6 +1125,123 @@
       msg.textContent = text;
       msg.className = `message ${type}`;
       setTimeout(() => { msg.className = 'message'; }, 4000);
+    }
+
+    // Track if we're editing
+    let editingMatchId = null;
+    let editingMatchGender = null;
+
+    // Edit match
+    async function editMatch(matchId) {
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        
+        // Fetch match details
+        const matchResponse = await fetch(`${API_BASE}/api/matches/${matchId}`);
+        if (!matchResponse.ok) throw new Error('Failed to fetch match');
+        const match = await matchResponse.json();
+        
+        // Fetch records for this match
+        const recordsResponse = await fetch(`${API_BASE}/api/records?matchId=${matchId}`);
+        const records = recordsResponse.ok ? await recordsResponse.json() : [];
+        
+        // Set editing state
+        editingMatchId = matchId;
+        editingMatchGender = match.gender;
+        
+        // Update modal title
+        document.querySelector('.modal-header h2').textContent = 'Edit Match';
+        document.querySelector('.submit-match-btn').textContent = 'Update Match';
+        
+        // Fill in form fields
+        document.getElementById('matchDate').value = match.match_date;
+        document.getElementById('opponent').value = match.opponent;
+        document.getElementById('location').value = match.location || '';
+        document.getElementById('result').value = match.result || '';
+        document.getElementById('ourScore').value = match.our_score || '';
+        document.getElementById('opponentScore').value = match.opponent_score || '';
+        document.getElementById('comments').value = match.comments || '';
+        
+        // Load players for this match's gender
+        const playersResponse = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${match.gender}`);
+        if (playersResponse.ok) {
+          players = await playersResponse.json();
+          renderPlayersTableWithScores(records);
+        }
+        
+        // Show modal
+        document.getElementById('matchModal').classList.add('active');
+        
+      } catch (error) {
+        console.error('Error editing match:', error);
+        showMessage('Error loading match data. Please try again.', 'error');
+      }
+    }
+
+    // Render players table with existing scores
+    function renderPlayersTableWithScores(records) {
+      const tbody = document.getElementById('playersTableBody');
+      
+      if (!players || players.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">No players found.</td></tr>';
+        return;
+      }
+
+      // Create a map of player records
+      const recordMap = {};
+      records.forEach(record => {
+        recordMap[record.player_id] = record;
+      });
+
+      tbody.innerHTML = players.map(player => {
+        const record = recordMap[player.id];
+        const hasRecord = !!record;
+        const isDNP = !hasRecord;
+        
+        return `
+          <tr class="player-row ${isDNP ? 'dnp' : ''}" data-player-id="${player.id}" data-record-id="${record ? record.id : ''}">
+            <td class="player-name-cell">${player.first_name} ${player.last_name}</td>
+            <td><input type="number" class="score-input game1" min="0" max="300" placeholder="-" value="${record?.game1 || ''}" ${isDNP ? 'disabled' : ''}></td>
+            <td><input type="number" class="score-input game2" min="0" max="300" placeholder="-" value="${record?.game2 || ''}" ${isDNP ? 'disabled' : ''}></td>
+            <td><input type="number" class="score-input game3" min="0" max="300" placeholder="-" value="${record?.game3 || ''}" ${isDNP ? 'disabled' : ''}></td>
+            <td><input type="checkbox" class="varsity-checkbox" ${record?.is_varsity ? 'checked' : ''} ${isDNP ? 'disabled' : ''}></td>
+            <td><input type="checkbox" class="dnp-checkbox" ${isDNP ? 'checked' : ''} onchange="toggleDNP(this)"></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Delete match
+    async function deleteMatch(matchId) {
+      if (!confirm('Are you sure you want to delete this match? This will also delete all player records for this match.')) {
+        return;
+      }
+
+      try {
+        const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+        const response = await fetch(`${API_BASE}/api/matches/${matchId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Failed to delete match');
+
+        showMessage('Match deleted successfully!', 'success');
+        loadMatches();
+
+      } catch (error) {
+        console.error('Error deleting match:', error);
+        showMessage('Error deleting match. Please try again.', 'error');
+      }
+    }
+
+    // Reset modal for new match
+    function resetModal() {
+      editingMatchId = null;
+      editingMatchGender = null;
+      document.querySelector('.modal-header h2').textContent = 'Log New Match';
+      document.querySelector('.submit-match-btn').textContent = 'Save Match';
+      document.getElementById('matchForm').reset();
+      renderPlayersTable();
     }
 
     // Initialize
