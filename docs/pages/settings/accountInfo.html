@@ -525,32 +525,59 @@
 
 
     // Ensure DOM is loaded before accessing elements
-    document.addEventListener('DOMContentLoaded', function() {
-      const currentUser = auth.getUser();
-      console.log('[Account Info] Loaded user:', currentUser);
+    document.addEventListener('DOMContentLoaded', async function() {
       let hasError = false;
-      if (currentUser) {
+      let userData = null;
+      // Try to get user from localStorage first
+      const localUser = auth.getUser();
+      // Try to get user from Supabase if possible
+      try {
+        if (window.supabase && localUser && localUser.email) {
+          const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
+          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
+          const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+          let { data, error } = await supabase
+            .from('users')
+            .select('first_name,last_name,email,team_code')
+            .eq('email', localUser.email)
+            .single();
+          if (error) {
+            console.error('[Account Info] Supabase error:', error);
+            userData = localUser;
+          } else {
+            userData = data;
+          }
+        } else {
+          userData = localUser;
+        }
+      } catch (e) {
+        console.error('[Account Info] Error fetching user from Supabase:', e);
+        userData = localUser;
+      }
+
+      console.log('[Account Info] Loaded user:', userData);
+      if (userData) {
         // Get display name robustly
         let displayName = '';
         if (isStudent) {
-          displayName = currentUser.name || currentUser.display_name || currentUser.first_name || currentUser.last_name || '';
+          displayName = userData.name || userData.display_name || userData.first_name || userData.last_name || '';
         } else {
-          displayName = auth.getDisplayName() || [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.name || currentUser.display_name || '';
+          displayName = [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.name || userData.display_name || '';
         }
         const displayNameInput = document.getElementById('displayName');
         if (displayNameInput) displayNameInput.value = displayName.trim();
         else hasError = true;
 
         const emailInput = document.getElementById('email');
-        if (emailInput) emailInput.value = currentUser.email || currentUser.username || '';
+        if (emailInput) emailInput.value = userData.email || userData.username || '';
         else hasError = true;
 
         const codeDisplay = document.getElementById('userCode');
-        if (codeDisplay) codeDisplay.textContent = currentUser.team_code || currentUser.coach_code || currentUser.code || '';
+        if (codeDisplay) codeDisplay.textContent = userData.team_code || userData.coach_code || userData.code || '';
         else hasError = true;
 
         // If any field is missing, show error
-        if (!displayName || !currentUser.email || !(currentUser.team_code || currentUser.coach_code || currentUser.code)) {
+        if (!displayName || !userData.email || !(userData.team_code || userData.coach_code || userData.code)) {
           hasError = true;
         }
       } else {
