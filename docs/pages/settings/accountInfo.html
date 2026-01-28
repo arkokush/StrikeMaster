@@ -304,9 +304,7 @@
       </a>
 
       <button id="logoutBtn">
-        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-        </svg>
+        <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         Logout
       </button>
     </div>
@@ -321,7 +319,10 @@
           </svg>
           Back
         </a>
-        <button id="mobileLogoutBtn" style="background: none; border: none; color: #ef4444; font-size: 14px; font-weight: 500; cursor: pointer;">Logout</button>
+        <button id="mobileLogoutBtn" style="background: none; border: none; color: #ef4444; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+          <svg fill="none" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Logout
+        </button>
       </div>
 
       <div class="page-header">
@@ -522,23 +523,31 @@
       if (confirm('Are you sure you want to logout?')) auth.logout('../../index.html');
     });
 
-    // Load user data
-    const currentUser = auth.getUser();
-    if (currentUser) {
-      // Get display name - try multiple fields
-      let displayName = '';
-      if (isStudent) {
-        displayName = currentUser.name || currentUser.display_name || 'Student';
+
+    // Ensure DOM is loaded before accessing elements
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentUser = auth.getUser();
+      if (currentUser) {
+        // Get display name robustly
+        let displayName = '';
+        if (isStudent) {
+          displayName = currentUser.name || currentUser.display_name || currentUser.first_name || currentUser.last_name || 'Student';
+        } else {
+          displayName = auth.getDisplayName() || [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ') || currentUser.name || currentUser.display_name || 'Coach';
+        }
+        const displayNameInput = document.getElementById('displayName');
+        if (displayNameInput) displayNameInput.value = displayName.trim();
+
+        const emailInput = document.getElementById('email');
+        if (emailInput) emailInput.value = currentUser.email || currentUser.username || '';
+
+        const codeDisplay = document.getElementById('userCode');
+        if (codeDisplay) codeDisplay.textContent = currentUser.team_code || currentUser.coach_code || currentUser.code || '------';
       } else {
-        displayName = auth.getDisplayName() || currentUser.first_name + ' ' + currentUser.last_name || currentUser.name || currentUser.display_name || 'Coach';
+        // No user data - redirect to login
+        console.error('No user data found');
       }
-      document.getElementById('displayName').value = displayName.trim();
-      document.getElementById('email').value = currentUser.email || '';
-      document.getElementById('userCode').textContent = currentUser.team_code || '------';
-    } else {
-      // No user data - redirect to login
-      console.error('No user data found');
-    }
+    });
 
     // For students, hide editable features
     if (isStudent) {
