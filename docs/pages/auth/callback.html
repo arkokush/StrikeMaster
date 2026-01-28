@@ -5,7 +5,6 @@
   <title>Signing in... - Strike Master</title>
   <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="../../assets/js/config/api.js"></script>
   <style>
     :root {
       --neutral-900: #111827;
@@ -112,18 +111,7 @@
     <a class="back-link" id="backLink" href="login.html" style="display: none;">← Back to Login</a>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../../assets/js/config/api.js"></script>
   <script>
-    const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        detectSessionInUrl: true,
-        flowType: 'implicit'
-      }
-    });
-
     function showError(text) {
       document.getElementById('spinner').style.display = 'none';
       document.getElementById('title').textContent = 'Sign-in Failed';
@@ -143,99 +131,87 @@
       document.getElementById('message').style.display = 'block';
     }
 
-    async function processUser(user) {
-      console.log('Processing user:', user.email);
-      
-      // Create/update user in our backend
-      try {
-        const res = await api.post('/api/auth/google-login', {
-          email: user.email,
-          name: user.user_metadata?.full_name || user.email.split('@')[0],
-          googleId: user.id,
-          avatarUrl: user.user_metadata?.avatar_url
-        });
-        
-        const data = await res.json();
-        console.log('API response:', data);
-        
-        if (res.ok && data.user) {
-          // Store auth info
-          if (data.token) {
-            localStorage.setItem('bowling_token', data.token);
-          }
-          localStorage.setItem('bowling_user', JSON.stringify(data.user));
-          localStorage.setItem('bowling_role', data.role || 'student');
-          localStorage.setItem('supabase_user', JSON.stringify(user));
-
-          showSuccess('Sign-in successful! Redirecting...');
-          
-          setTimeout(() => {
-            window.location.href = '../dashboard/teamSelector.html';
-          }, 1000);
-        } else if (data.needsTeam) {
-          localStorage.setItem('pending_google_user', JSON.stringify({
-            email: user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            googleId: user.id,
-            avatarUrl: user.user_metadata?.avatar_url
-          }));
-          showSuccess('Account created! Redirecting to team selection...');
-          setTimeout(() => {
-            window.location.href = '../dashboard/teamSelector.html';
-          }, 1000);
-        } else {
-          showError(data.error || 'Failed to complete sign-in.');
+    // Parse the hash fragment to get tokens
+    function parseHash() {
+      const hash = window.location.hash.substring(1);
+      const params = {};
+      hash.split('&').forEach(part => {
+        const [key, value] = part.split('=');
+        if (key && value) {
+          params[key] = decodeURIComponent(value);
         }
-      } catch (apiError) {
-        console.error('API error:', apiError);
-        // Still store basic info and redirect
-        localStorage.setItem('bowling_user', JSON.stringify({
-          email: user.email,
-          name: user.user_metadata?.full_name || user.email.split('@')[0],
-          avatar_url: user.user_metadata?.avatar_url
-        }));
-        localStorage.setItem('bowling_role', 'student');
-        localStorage.setItem('supabase_user', JSON.stringify(user));
-        
-        showSuccess('Signed in! Redirecting...');
-        setTimeout(() => {
-          window.location.href = '../dashboard/teamSelector.html';
-        }, 1000);
+      });
+      return params;
+    }
+
+    // Decode JWT to get user info
+    function decodeJWT(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        console.error('Failed to decode JWT:', e);
+        return null;
       }
     }
 
-    // Listen for auth state changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, session?.user?.email);
+    function handleCallback() {
+      const params = parseHash();
       
-      if (event === 'SIGNED_IN' && session?.user) {
-        await processUser(session.user);
+      // Check for error in URL
+      if (params.error) {
+        showError(params.error_description || params.error || 'Authentication failed');
+        return;
       }
-    });
 
-    // Also check immediately in case we already have a session
-    async function checkSession() {
-      // Parse hash manually as fallback
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token')) {
-        console.log('Found access token in URL, waiting for Supabase to process...');
-        // Give Supabase a moment to process the hash
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      const accessToken = params.access_token;
+      if (!accessToken) {
+        showError('No access token found. Please try signing in again.');
+        return;
       }
-      
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Current session:', session?.user?.email, error);
-      
-      if (session?.user) {
-        await processUser(session.user);
-      } else if (!hash || !hash.includes('access_token')) {
-        showError('No session found. Please try signing in again.');
+
+      // Decode the JWT to get user info
+      const payload = decodeJWT(accessToken);
+      if (!payload) {
+        showError('Invalid token. Please try signing in again.');
+        return;
       }
-      // If hash has token but no session yet, onAuthStateChange will handle it
+
+      console.log('User payload:', payload);
+
+      // Extract user info from JWT
+      const userMetadata = payload.user_metadata || {};
+      const user = {
+        id: payload.sub,
+        email: payload.email || userMetadata.email,
+        name: userMetadata.full_name || userMetadata.name || payload.email?.split('@')[0],
+        avatar_url: userMetadata.avatar_url || userMetadata.picture
+      };
+
+      console.log('Extracted user:', user);
+
+      // Store user info in localStorage
+      localStorage.setItem('bowling_user', JSON.stringify(user));
+      localStorage.setItem('bowling_role', 'student');
+      localStorage.setItem('bowling_token', accessToken);
+      if (params.refresh_token) {
+        localStorage.setItem('bowling_refresh_token', params.refresh_token);
+      }
+
+      showSuccess('Sign-in successful! Redirecting...');
+      
+      // Redirect to dashboard
+      setTimeout(() => {
+        window.location.href = '../dashboard/teamSelector.html';
+      }, 1000);
     }
 
-    // Run check after a brief delay to let Supabase initialize
-    setTimeout(checkSession, 500);
+    // Run on page load
+    handleCallback();
   </script>
 </body>
 </html>

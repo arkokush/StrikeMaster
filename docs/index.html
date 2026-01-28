@@ -294,35 +294,48 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Check if user is already logged in
-    const existingUser = localStorage.getItem('bowling_user');
-    if (existingUser) {
-      // Redirect to dashboard if already logged in
-      window.location.href = 'pages/dashboard/teamSelector.html';
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is already logged in
+      const existingUser = localStorage.getItem('bowling_user');
+      if (existingUser) {
+        // Redirect to dashboard if already logged in
+        window.location.href = 'pages/dashboard/teamSelector.html';
+        return;
+      }
 
-    // Initialize Supabase
-    const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      // Initialize Supabase
+      let supabase = null;
+      if (window.supabase) {
+        const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
+        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      }
 
-    // Google Sign In handler
-    document.getElementById('googleSignIn').addEventListener('click', async () => {
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+      // Google Sign In handler
+      const googleBtn = document.getElementById('googleSignIn');
+      if (googleBtn) {
+        googleBtn.addEventListener('click', async () => {
+          if (!supabase) {
+            alert('Google Sign-In is not available. Please try again later.');
+            return;
+          }
+          try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+              }
+            });
+            
+            if (error) {
+              console.error('Google sign in error:', error);
+              alert('Failed to sign in with Google. Please try again.');
+            }
+          } catch (err) {
+            console.error('Google OAuth error:', err);
+            alert('Failed to connect to Google. Please try again.');
           }
         });
-        
-        if (error) {
-          console.error('Google sign in error:', error);
-          alert('Failed to sign in with Google. Please try again.');
-        }
-      } catch (err) {
-        console.error('Google OAuth error:', err);
-        alert('Failed to connect to Google. Please try again.');
       }
     });
   </script>
