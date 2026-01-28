@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Signing in... - Strike Master</title>
+  <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../assets/js/config/api.js"></script>
+  <style>
+    :root {
+      --neutral-900: #111827;
+      --neutral-700: #374151;
+      --neutral-500: #6b7280;
+      --neutral-300: #d1d5db;
+      --neutral-100: #f3f4f6;
+      --neutral-50: #f9fafb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--neutral-50);
+      color: var(--neutral-900);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 48px;
+      border-radius: 16px;
+      width: 400px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      border: 1px solid var(--neutral-100);
+      text-align: center;
+    }
+    .brand-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--neutral-900);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .brand-icon svg {
+      width: 36px;
+      height: 36px;
+      stroke: white;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--neutral-100);
+      border-top-color: var(--neutral-900);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--neutral-900);
+      margin: 0 0 8px;
+    }
+    p {
+      color: var(--neutral-500);
+      font-size: 14px;
+      margin: 0;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .message.error {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .message.success {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: var(--neutral-500);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover {
+      color: var(--neutral-900);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+    </div>
+    <div class="spinner" id="spinner"></div>
+    <h2 id="title">Signing you in...</h2>
+    <p id="subtitle">Please wait while we complete your sign-in</p>
+    <div class="message" id="message" style="display: none;"></div>
+    <a class="back-link" id="backLink" href="login.html" style="display: none;">← Back to Login</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    function showError(text) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('title').textContent = 'Sign-in Failed';
+      document.getElementById('subtitle').textContent = '';
+      document.getElementById('message').textContent = text;
+      document.getElementById('message').className = 'message error';
+      document.getElementById('message').style.display = 'block';
+      document.getElementById('backLink').style.display = 'inline-block';
+    }
+
+    function showSuccess(text) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('title').textContent = 'Welcome!';
+      document.getElementById('subtitle').textContent = '';
+      document.getElementById('message').textContent = text;
+      document.getElementById('message').className = 'message success';
+      document.getElementById('message').style.display = 'block';
+    }
+
+    async function handleCallback() {
+      try {
+        // Get the session from URL hash (Supabase puts tokens there)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          showError('Failed to complete sign-in. Please try again.');
+          return;
+        }
+
+        if (!session) {
+          // No session yet, wait for hash to be processed
+          const { data, error: hashError } = await supabase.auth.getSession();
+          if (hashError || !data.session) {
+            showError('No session found. Please try signing in again.');
+            return;
+          }
+        }
+
+        const user = session?.user;
+        if (!user) {
+          showError('Could not retrieve user information.');
+          return;
+        }
+
+        // Create/update user in our backend
+        try {
+          const res = await api.post('/api/auth/google-login', {
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            googleId: user.id,
+            avatarUrl: user.user_metadata?.avatar_url
+          });
+          
+          const data = await res.json();
+          
+          if (res.ok && data.user) {
+            // Store auth info
+            if (data.token) {
+              localStorage.setItem('bowling_token', data.token);
+            }
+            localStorage.setItem('bowling_user', JSON.stringify(data.user));
+            localStorage.setItem('bowling_role', data.role || 'student');
+            localStorage.setItem('supabase_user', JSON.stringify(user));
+
+            showSuccess('Sign-in successful! Redirecting...');
+            
+            setTimeout(() => {
+              window.location.href = '../dashboard/teamSelector.html';
+            }, 1000);
+          } else {
+            // User might need to join a team first
+            if (data.needsTeam) {
+              localStorage.setItem('pending_google_user', JSON.stringify({
+                email: user.email,
+                name: user.user_metadata?.full_name || user.email.split('@')[0],
+                googleId: user.id,
+                avatarUrl: user.user_metadata?.avatar_url
+              }));
+              showSuccess('Account created! Redirecting to team selection...');
+              setTimeout(() => {
+                window.location.href = 'joinTeam.html';
+              }, 1000);
+            } else {
+              showError(data.error || 'Failed to complete sign-in.');
+            }
+          }
+        } catch (apiError) {
+          console.error('API error:', apiError);
+          // Still store basic info and redirect
+          localStorage.setItem('bowling_user', JSON.stringify({
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0]
+          }));
+          localStorage.setItem('bowling_role', 'student');
+          localStorage.setItem('supabase_user', JSON.stringify(user));
+          
+          showSuccess('Signed in! Redirecting...');
+          setTimeout(() => {
+            window.location.href = '../dashboard/teamSelector.html';
+          }, 1000);
+        }
+        
+      } catch (err) {
+        console.error('Callback error:', err);
+        showError('An unexpected error occurred. Please try again.');
+      }
+    }
+
+    // Run on page load
+    handleCallback();
+  </script>
+</body>
+</html>

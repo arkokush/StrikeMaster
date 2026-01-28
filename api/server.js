@@ -282,6 +282,133 @@ app.post('/api/auth/student-login', async (req, res) => {
   }
 });
 
+// Google OAuth Sign In/Sign Up
+app.post('/api/auth/google-login', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, name, googleId, avatarUrl } = req.body;
+
+    if (!email || !googleId) {
+      return res.status(400).json({ error: 'Email and Google ID required' });
+    }
+
+    // First check if user is a coach
+    const { data: coach, error: coachError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (coach && !coachError) {
+      // Existing coach - update with Google info if needed
+      if (!coach.google_id) {
+        await supabase
+          .from('users')
+          .update({ google_id: googleId, avatar_url: avatarUrl })
+          .eq('id', coach.id);
+      }
+
+      return res.json({
+        success: true,
+        user: {
+          id: coach.id,
+          email: coach.email,
+          first_name: coach.first_name,
+          last_name: coach.last_name,
+          team_name: coach.team_name,
+          team_code: coach.team_code,
+          avatar_url: avatarUrl || coach.avatar_url
+        },
+        role: 'coach'
+      });
+    }
+
+    // Check if user is an existing student
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (student && !studentError) {
+      // Existing student - update with Google info
+      if (!student.google_id) {
+        await supabase
+          .from('students')
+          .update({ google_id: googleId, avatar_url: avatarUrl, name: name })
+          .eq('id', student.id);
+      }
+
+      // Get coach info
+      const { data: studentCoach } = await supabase
+        .from('users')
+        .select('id, team_name, team_code')
+        .eq('id', student.coach_id)
+        .single();
+
+      return res.json({
+        success: true,
+        user: {
+          id: studentCoach?.id || student.coach_id,
+          email: student.email,
+          name: name || student.name,
+          coach_id: student.coach_id,
+          team_name: studentCoach?.team_name,
+          team_code: studentCoach?.team_code,
+          avatar_url: avatarUrl || student.avatar_url
+        },
+        role: 'student'
+      });
+    }
+
+    // New user - they need to join a team
+    // Create a pending student record
+    const { data: newStudent, error: createError } = await supabase
+      .from('students')
+      .insert([{
+        email: email.toLowerCase(),
+        name: name,
+        google_id: googleId,
+        avatar_url: avatarUrl,
+        coach_id: null  // Will be set when they join a team
+      }])
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Create student error:', createError);
+      // Return needsTeam flag even if insert fails (might be a constraint issue)
+      return res.json({
+        success: true,
+        needsTeam: true,
+        user: {
+          email: email.toLowerCase(),
+          name: name,
+          avatar_url: avatarUrl
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      needsTeam: true,
+      user: {
+        id: newStudent.id,
+        email: newStudent.email,
+        name: newStudent.name,
+        avatar_url: newStudent.avatar_url
+      }
+    });
+
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get user profile
 app.get('/api/auth/profile/:userId', async (req, res) => {
   try {
