@@ -294,6 +294,13 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // Check if user is already logged in
+    const existingUser = localStorage.getItem('bowling_user');
+    if (existingUser) {
+      // Redirect to dashboard if already logged in
+      window.location.href = 'pages/dashboard/teamSelector.html';
+    }
+
     // Initialize Supabase
     const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
@@ -301,25 +308,23 @@
 
     // Google Sign In handler
     document.getElementById('googleSignIn').addEventListener('click', async () => {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+          }
+        });
+        
+        if (error) {
+          console.error('Google sign in error:', error);
+          alert('Failed to sign in with Google. Please try again.');
         }
-      });
-      
-      if (error) {
-        console.error('Google sign in error:', error);
-        alert('Failed to sign in with Google. Please try again.');
+      } catch (err) {
+        console.error('Google OAuth error:', err);
+        alert('Failed to connect to Google. Please try again.');
       }
     });
-
-    // Check if user is already logged in
-    const existingUser = localStorage.getItem('bowling_user');
-    if (existingUser) {
-      // Redirect to dashboard if already logged in
-      window.location.href = 'pages/dashboard/teamSelector.html';
-    }
   </script>
 </body>
 </html>

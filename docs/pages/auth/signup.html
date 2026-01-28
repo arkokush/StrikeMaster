@@ -265,6 +265,18 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // DOM elements
+    const form = document.getElementById('signupForm');
+    const msgEl = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Show message helper
+    function showMessage(text, type) {
+      msgEl.innerHTML = text;
+      msgEl.className = `message ${type}`;
+      msgEl.style.display = 'block';
+    }
+
     // Initialize Supabase
     const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
@@ -272,28 +284,23 @@
 
     // Google Sign Up handler
     document.getElementById('googleSignUp').addEventListener('click', async () => {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/StrikeMaster/pages/auth/callback.html'
+          }
+        });
+        
+        if (error) {
+          console.error('Google sign up error:', error);
+          showMessage('Failed to sign up with Google. Please try again.', 'error');
         }
-      });
-      
-      if (error) {
-        console.error('Google sign up error:', error);
-        showMessage('Failed to sign up with Google. Please try again.', 'error');
+      } catch (err) {
+        console.error('Google OAuth error:', err);
+        showMessage('Failed to connect to Google. Please try again.', 'error');
       }
     });
-
-    const form = document.getElementById('signupForm');
-    const msgEl = document.getElementById('message');
-    const submitBtn = document.getElementById('submitBtn');
-
-    function showMessage(text, type) {
-      msgEl.innerHTML = text;
-      msgEl.className = `message ${type}`;
-      msgEl.style.display = 'block';
-    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
