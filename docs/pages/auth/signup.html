@@ -12,6 +12,7 @@
       --neutral-700: #374151;
       --neutral-500: #6b7280;
       --neutral-300: #d1d5db;
+      --neutral-200: #e5e7eb;
       --neutral-100: #f3f4f6;
       --neutral-50: #f9fafb;
     }
@@ -25,12 +26,14 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
+      padding: 20px;
     }
     .container {
       background: white;
       padding: 40px;
       border-radius: 16px;
-      width: 400px;
+      width: 100%;
+      max-width: 420px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
       border: 1px solid var(--neutral-100);
     }
@@ -68,9 +71,57 @@
     .subtitle {
       text-align: center;
       color: var(--neutral-500);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       font-size: 14px;
     }
+
+    /* Role Selector */
+    .role-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .role-option {
+      flex: 1;
+      padding: 16px;
+      border: 2px solid var(--neutral-200);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      background: white;
+    }
+    .role-option:hover {
+      border-color: var(--neutral-300);
+      background: var(--neutral-50);
+    }
+    .role-option.active {
+      border-color: var(--neutral-900);
+      background: var(--neutral-50);
+    }
+    .role-option svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--neutral-500);
+      margin-bottom: 8px;
+    }
+    .role-option.active svg {
+      stroke: var(--neutral-900);
+    }
+    .role-option .role-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--neutral-700);
+    }
+    .role-option.active .role-title {
+      color: var(--neutral-900);
+    }
+    .role-option .role-desc {
+      font-size: 12px;
+      color: var(--neutral-500);
+      margin-top: 4px;
+    }
+
     label {
       display: block;
       margin-top: 16px;
@@ -97,7 +148,11 @@
       border-color: var(--neutral-900);
       box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
     }
-    button {
+    input:read-only {
+      background: var(--neutral-100);
+      cursor: default;
+    }
+    button[type="submit"] {
       width: 100%;
       padding: 13px;
       margin-top: 24px;
@@ -111,11 +166,11 @@
       font-family: inherit;
       transition: all 0.2s;
     }
-    button:hover {
+    button[type="submit"]:hover {
       background: var(--neutral-700);
       transform: translateY(-1px);
     }
-    button:disabled {
+    button[type="submit"]:disabled {
       background: var(--neutral-300);
       cursor: not-allowed;
       transform: none;
@@ -168,7 +223,7 @@
     .login-link a:hover {
       text-decoration: underline;
     }
-    .team-code-hint {
+    .hint {
       font-size: 12px;
       color: var(--neutral-500);
       margin-top: 6px;
@@ -215,6 +270,34 @@
       width: 18px;
       height: 18px;
     }
+    .form-section {
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+    }
+
+    /* Google linking info */
+    .google-linked-info {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #166534;
+    }
+    .google-linked-info svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .google-linked-info .email {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -225,7 +308,33 @@
       </div>
     </div>
     <h2 class="brand-name">Strike<span>Master</span></h2>
-    <p class="subtitle">Create your student account</p>
+    <p class="subtitle" id="subtitle">Choose your account type</p>
+
+    <!-- Google Linked Info (shown when completing signup after Google auth) -->
+    <div class="google-linked-info" id="googleLinkedInfo" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>Your account will be linked with <span class="email" id="googleEmail"></span></span>
+    </div>
+
+    <!-- Role Selector -->
+    <div class="role-selector" id="roleSelector">
+      <div class="role-option active" data-role="student" onclick="selectRole('student')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+        </svg>
+        <div class="role-title">Student</div>
+        <div class="role-desc">View team stats</div>
+      </div>
+      <div class="role-option" data-role="coach" onclick="selectRole('coach')">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+        <div class="role-title">Coach</div>
+        <div class="role-desc">Manage your team</div>
+      </div>
+    </div>
 
     <!-- Google Sign Up Button -->
     <button type="button" class="google-btn" id="googleSignUp">
@@ -240,18 +349,39 @@
     
     <div class="divider"><span>or sign up with email</span></div>
 
-    <form id="signupForm">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="you@example.com" required>
+    <!-- Student Form -->
+    <form id="studentForm" class="form-section active">
+      <label for="studentEmail">Email</label>
+      <input type="email" id="studentEmail" placeholder="you@example.com" required>
       
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Create a password" required minlength="6">
+      <label for="studentPassword">Password</label>
+      <input type="password" id="studentPassword" placeholder="Create a password" required minlength="6">
       
       <label for="teamCode">Team Code</label>
       <input type="text" id="teamCode" placeholder="Enter code from your coach" required maxlength="6" style="text-transform: uppercase;">
-      <p class="team-code-hint">Get this 6-character code from your coach</p>
+      <p class="hint">Get this 6-character code from your coach</p>
       
-      <button type="submit" id="submitBtn">Create Account</button>
+      <button type="submit" id="studentSubmitBtn">Create Student Account</button>
+    </form>
+
+    <!-- Coach Form -->
+    <form id="coachForm" class="form-section">
+      <label for="coachFirstName">First Name</label>
+      <input type="text" id="coachFirstName" placeholder="John" required>
+      
+      <label for="coachLastName">Last Name</label>
+      <input type="text" id="coachLastName" placeholder="Smith" required>
+      
+      <label for="coachEmail">Email</label>
+      <input type="email" id="coachEmail" placeholder="you@example.com" required>
+      
+      <label for="coachPassword">Password</label>
+      <input type="password" id="coachPassword" placeholder="Create a password" required minlength="6">
+      
+      <label for="teamName">Team Name</label>
+      <input type="text" id="teamName" placeholder="e.g., Lincoln High Bowling" required>
+      
+      <button type="submit" id="coachSubmitBtn">Create Coach Account</button>
     </form>
     
     <div class="message" id="message" style="display: none;"></div>
@@ -267,9 +397,44 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // DOM elements
-      const form = document.getElementById('signupForm');
+      const studentForm = document.getElementById('studentForm');
+      const coachForm = document.getElementById('coachForm');
       const msgEl = document.getElementById('message');
-      const submitBtn = document.getElementById('submitBtn');
+      const subtitle = document.getElementById('subtitle');
+      const googleLinkedInfo = document.getElementById('googleLinkedInfo');
+      const googleEmailSpan = document.getElementById('googleEmail');
+      const googleBtn = document.getElementById('googleSignUp');
+      const roleSelector = document.getElementById('roleSelector');
+
+      let selectedRole = 'student';
+      let pendingGoogleUser = null;
+
+      // Check for pending Google signup
+      const pendingGoogle = localStorage.getItem('pending_google_signup');
+      if (pendingGoogle) {
+        try {
+          pendingGoogleUser = JSON.parse(pendingGoogle);
+          googleLinkedInfo.style.display = 'flex';
+          googleEmailSpan.textContent = pendingGoogleUser.email;
+          googleBtn.style.display = 'none';
+          subtitle.textContent = 'Complete your account setup';
+          
+          // Pre-fill email fields
+          document.getElementById('studentEmail').value = pendingGoogleUser.email;
+          document.getElementById('studentEmail').readOnly = true;
+          document.getElementById('coachEmail').value = pendingGoogleUser.email;
+          document.getElementById('coachEmail').readOnly = true;
+          
+          // Pre-fill name for coach
+          if (pendingGoogleUser.name) {
+            const names = pendingGoogleUser.name.split(' ');
+            document.getElementById('coachFirstName').value = names[0] || '';
+            document.getElementById('coachLastName').value = names.slice(1).join(' ') || '';
+          }
+        } catch (e) {
+          localStorage.removeItem('pending_google_signup');
+        }
+      }
 
       // Show message helper
       function showMessage(text, type) {
@@ -278,7 +443,21 @@
         msgEl.style.display = 'block';
       }
 
-      // Initialize Supabase (only if available)
+      // Role selector
+      window.selectRole = function(role) {
+        selectedRole = role;
+        document.querySelectorAll('.role-option').forEach(opt => {
+          opt.classList.toggle('active', opt.dataset.role === role);
+        });
+        studentForm.classList.toggle('active', role === 'student');
+        coachForm.classList.toggle('active', role === 'coach');
+        subtitle.textContent = pendingGoogleUser 
+          ? 'Complete your account setup' 
+          : (role === 'student' ? 'Create your student account' : 'Create your coach account');
+        msgEl.style.display = 'none';
+      };
+
+      // Initialize Supabase
       let supabase = null;
       if (window.supabase) {
         const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
@@ -287,13 +466,16 @@
       }
 
       // Google Sign Up handler
-      const googleBtn = document.getElementById('googleSignUp');
       if (googleBtn) {
         googleBtn.addEventListener('click', async () => {
           if (!supabase) {
             showMessage('Google Sign-Up is not available. Please use email signup.', 'error');
             return;
           }
+          
+          // Store the selected role for after OAuth
+          localStorage.setItem('google_signup_role', selectedRole);
+          
           try {
             const { data, error } = await supabase.auth.signInWithOAuth({
               provider: 'google',
@@ -313,12 +495,12 @@
         });
       }
 
-      // Form submit handler
-      form.addEventListener('submit', async (e) => {
+      // Student form submit handler
+      studentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
+        const email = document.getElementById('studentEmail').value.trim();
+        const password = document.getElementById('studentPassword').value;
         const teamCode = document.getElementById('teamCode').value.trim().toUpperCase();
         
         if (!email || !password || !teamCode) {
@@ -326,24 +508,38 @@
           return;
         }
 
+        const submitBtn = document.getElementById('studentSubmitBtn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Creating account...';
         showMessage('Verifying team code...', 'loading');
 
         try {
-          const res = await api.post('/api/auth/student-signup', {
+          const payload = {
             email,
             password,
             teamCode
-          });
+          };
+
+          // If linking with Google
+          if (pendingGoogleUser) {
+            payload.googleId = pendingGoogleUser.googleId;
+            payload.avatarUrl = pendingGoogleUser.avatar_url;
+            payload.name = pendingGoogleUser.name;
+          }
+
+          const res = await api.post('/api/auth/student-signup', payload);
           const data = await res.json();
           
           if (!res.ok) {
             showMessage(data.error || 'Sign up failed', 'error');
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Account';
+            submitBtn.textContent = 'Create Student Account';
             return;
           }
+
+          // Clear pending Google data
+          localStorage.removeItem('pending_google_signup');
+          localStorage.removeItem('google_signup_role');
 
           // Store auth
           if (data.user) {
@@ -361,7 +557,76 @@
           console.error(err);
           showMessage('Network error. Please try again.', 'error');
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Account';
+          submitBtn.textContent = 'Create Student Account';
+        }
+      });
+
+      // Coach form submit handler
+      coachForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const firstName = document.getElementById('coachFirstName').value.trim();
+        const lastName = document.getElementById('coachLastName').value.trim();
+        const email = document.getElementById('coachEmail').value.trim();
+        const password = document.getElementById('coachPassword').value;
+        const teamName = document.getElementById('teamName').value.trim();
+        
+        if (!firstName || !lastName || !email || !password || !teamName) {
+          showMessage('Please fill in all fields', 'error');
+          return;
+        }
+
+        const submitBtn = document.getElementById('coachSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating account...';
+        showMessage('Setting up your team...', 'loading');
+
+        try {
+          const payload = {
+            firstName,
+            lastName,
+            email,
+            password,
+            teamName
+          };
+
+          // If linking with Google
+          if (pendingGoogleUser) {
+            payload.googleId = pendingGoogleUser.googleId;
+            payload.avatarUrl = pendingGoogleUser.avatar_url;
+          }
+
+          const res = await api.post('/api/auth/signup', payload);
+          const data = await res.json();
+          
+          if (!res.ok) {
+            showMessage(data.error || 'Sign up failed', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Coach Account';
+            return;
+          }
+
+          // Clear pending Google data
+          localStorage.removeItem('pending_google_signup');
+          localStorage.removeItem('google_signup_role');
+
+          // Store auth
+          if (data.user) {
+            localStorage.setItem('bowling_user', JSON.stringify(data.user));
+            localStorage.setItem('bowling_role', 'coach');
+          }
+
+          showMessage(`Welcome, Coach ${firstName}! Your team code is: <strong>${data.teamCode}</strong><br>Redirecting...`, 'success');
+
+          setTimeout(() => {
+            window.location.href = '../dashboard/teamSelector.html';
+          }, 2000);
+          
+        } catch (err) {
+          console.error(err);
+          showMessage('Network error. Please try again.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Coach Account';
         }
       });
     });

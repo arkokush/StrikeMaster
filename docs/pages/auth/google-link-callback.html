@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Signing in... - Strike Master</title>
+  <title>Linking Google... - Strike Master</title>
   <link rel="icon" type="image/png" href="../../assets/images/StrikeMasterLogo2.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -105,17 +105,16 @@
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
     </div>
     <div class="spinner" id="spinner"></div>
-    <h2 id="title">Signing you in...</h2>
-    <p id="subtitle">Please wait while we complete your sign-in</p>
+    <h2 id="title">Linking Google Account...</h2>
+    <p id="subtitle">Please wait while we link your account</p>
     <div class="message" id="message" style="display: none;"></div>
-    <a class="back-link" id="backLink" href="login.html" style="display: none;">← Back to Login</a>
+    <a class="back-link" id="backLink" href="../settings/accountInfo.html" style="display: none;">← Back to Settings</a>
   </div>
 
-  <script src="../../assets/js/config/api.js"></script>
   <script>
     function showError(text) {
       document.getElementById('spinner').style.display = 'none';
-      document.getElementById('title').textContent = 'Sign-in Failed';
+      document.getElementById('title').textContent = 'Linking Failed';
       document.getElementById('subtitle').textContent = '';
       document.getElementById('message').textContent = text;
       document.getElementById('message').className = 'message error';
@@ -125,17 +124,11 @@
 
     function showSuccess(text) {
       document.getElementById('spinner').style.display = 'none';
-      document.getElementById('title').textContent = 'Welcome!';
+      document.getElementById('title').textContent = 'Success!';
       document.getElementById('subtitle').textContent = '';
       document.getElementById('message').textContent = text;
       document.getElementById('message').className = 'message success';
       document.getElementById('message').style.display = 'block';
-    }
-
-    function showInfo(title, text) {
-      document.getElementById('spinner').style.display = 'none';
-      document.getElementById('title').textContent = title;
-      document.getElementById('subtitle').textContent = text;
     }
 
     // Parse the hash fragment to get tokens
@@ -166,7 +159,7 @@
       }
     }
 
-    async function handleCallback() {
+    function handleCallback() {
       const params = parseHash();
       
       // Check for error in URL
@@ -177,79 +170,39 @@
 
       const accessToken = params.access_token;
       if (!accessToken) {
-        showError('No access token found. Please try signing in again.');
+        showError('No access token found. Please try again.');
         return;
       }
 
       // Decode the JWT to get user info
       const payload = decodeJWT(accessToken);
       if (!payload) {
-        showError('Invalid token. Please try signing in again.');
+        showError('Invalid token. Please try again.');
         return;
       }
 
-      console.log('User payload:', payload);
+      console.log('Google user payload:', payload);
 
-      // Extract user info from JWT
+      // Extract Google user info from JWT
       const userMetadata = payload.user_metadata || {};
       const googleUser = {
         googleId: payload.sub,
         email: payload.email || userMetadata.email,
-        name: userMetadata.full_name || userMetadata.name || payload.email?.split('@')[0],
+        name: userMetadata.full_name || userMetadata.name,
         avatar_url: userMetadata.avatar_url || userMetadata.picture
       };
 
       console.log('Extracted Google user:', googleUser);
 
-      // Check if user exists in our database
-      try {
-        const res = await api.post('/api/auth/google-login', {
-          email: googleUser.email,
-          name: googleUser.name,
-          googleId: googleUser.googleId,
-          avatarUrl: googleUser.avatar_url
-        });
-        
-        const data = await res.json();
-        console.log('API response:', data);
+      // Store the Google data for the account settings page to process
+      localStorage.setItem('pending_google_link', JSON.stringify(googleUser));
 
-        if (data.success) {
-          if (data.needsTeam || data.needsSignup) {
-            // User not found - redirect to signup with pending Google data
-            showInfo('Almost there!', 'Redirecting to complete signup...');
-            
-            localStorage.setItem('pending_google_signup', JSON.stringify(googleUser));
-            localStorage.setItem('bowling_token', accessToken);
-            if (params.refresh_token) {
-              localStorage.setItem('bowling_refresh_token', params.refresh_token);
-            }
-            
-            setTimeout(() => {
-              window.location.href = 'signup.html';
-            }, 1000);
-            return;
-          }
-
-          // User found - log them in
-          localStorage.setItem('bowling_user', JSON.stringify(data.user));
-          localStorage.setItem('bowling_role', data.role);
-          localStorage.setItem('bowling_token', accessToken);
-          if (params.refresh_token) {
-            localStorage.setItem('bowling_refresh_token', params.refresh_token);
-          }
-
-          showSuccess('Sign-in successful! Redirecting...');
-          
-          setTimeout(() => {
-            window.location.href = '../dashboard/teamSelector.html';
-          }, 1000);
-        } else {
-          showError(data.error || 'Authentication failed');
-        }
-      } catch (err) {
-        console.error('API error:', err);
-        showError('Network error. Please try again.');
-      }
+      showSuccess('Google account verified! Redirecting...');
+      
+      // Redirect back to account settings
+      setTimeout(() => {
+        window.location.href = '../settings/accountInfo.html';
+      }, 1000);
     }
 
     // Run on page load

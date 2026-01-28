@@ -50,10 +50,21 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { email, password, firstName, lastName, teamName } = req.body;
+    const { email, password, firstName, lastName, teamName, googleId, avatarUrl } = req.body;
     
     if (!email || !password || !firstName || !lastName || !teamName) {
       return res.status(400).json({ error: 'All fields required: email, password, firstName, lastName, teamName' });
+    }
+
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
     }
 
     // Generate unique 6-character team code
@@ -76,11 +87,13 @@ app.post('/api/auth/signup', async (req, res) => {
       .from('users')
       .insert([{
         id: authData.user.id,
-        email,
+        email: email.toLowerCase(),
         first_name: firstName,
         last_name: lastName,
         team_name: teamName,
-        team_code: teamCode
+        team_code: teamCode,
+        google_id: googleId || null,
+        avatar_url: avatarUrl || null
       }])
       .select()
       .single();
@@ -165,7 +178,7 @@ app.post('/api/auth/student-signup', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { email, password, teamCode } = req.body;
+    const { email, password, teamCode, googleId, avatarUrl, name } = req.body;
 
     if (!email || !password || !teamCode) {
       return res.status(400).json({ error: 'Email, password, and team code required' });
@@ -200,7 +213,10 @@ app.post('/api/auth/student-signup', async (req, res) => {
         email: email.toLowerCase(),
         password_hash: password, // In production, hash this!
         coach_id: coach.id,
-        team_code: teamCode.toUpperCase()
+        team_code: teamCode.toUpperCase(),
+        google_id: googleId || null,
+        avatar_url: avatarUrl || null,
+        name: name || null
       }])
       .select()
       .single();
@@ -364,42 +380,16 @@ app.post('/api/auth/google-login', async (req, res) => {
       });
     }
 
-    // New user - they need to join a team
-    // Create a pending student record
-    const { data: newStudent, error: createError } = await supabase
-      .from('students')
-      .insert([{
-        email: email.toLowerCase(),
-        name: name,
-        google_id: googleId,
-        avatar_url: avatarUrl,
-        coach_id: null  // Will be set when they join a team
-      }])
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Create student error:', createError);
-      // Return needsTeam flag even if insert fails (might be a constraint issue)
-      return res.json({
-        success: true,
-        needsTeam: true,
-        user: {
-          email: email.toLowerCase(),
-          name: name,
-          avatar_url: avatarUrl
-        }
-      });
-    }
-
+    // New user - they need to complete signup (choose role, etc.)
+    // Don't create any record yet - let them complete signup flow
     res.json({
       success: true,
-      needsTeam: true,
+      needsSignup: true,
       user: {
-        id: newStudent.id,
-        email: newStudent.email,
-        name: newStudent.name,
-        avatar_url: newStudent.avatar_url
+        email: email.toLowerCase(),
+        name: name,
+        avatar_url: avatarUrl,
+        googleId: googleId
       }
     });
 
@@ -427,6 +417,160 @@ app.get('/api/auth/profile/:userId', async (req, res) => {
   } catch (error) {
     console.error('Profile error:', error);
     res.status(404).json({ error: error.message });
+  }
+});
+
+// Link Google Account to existing user
+app.post('/api/auth/link-google', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, googleId, avatarUrl, role } = req.body;
+
+    if (!email || !googleId) {
+      return res.status(400).json({ error: 'Email and Google ID required' });
+    }
+
+    if (role === 'coach') {
+      // Link to coach account
+      const { data: coach, error: coachError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      if (coachError || !coach) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+
+      if (coach.google_id) {
+        return res.status(400).json({ error: 'Google account already linked' });
+      }
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ google_id: googleId, avatar_url: avatarUrl || coach.avatar_url })
+        .eq('id', coach.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return res.json({
+        success: true,
+        message: 'Google account linked successfully',
+        user: { ...coach, google_id: googleId, avatar_url: avatarUrl || coach.avatar_url }
+      });
+    } else {
+      // Link to student account
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      if (studentError || !student) {
+        return res.status(404).json({ error: 'Account not found' });
+      }
+
+      if (student.google_id) {
+        return res.status(400).json({ error: 'Google account already linked' });
+      }
+
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ google_id: googleId, avatar_url: avatarUrl || student.avatar_url })
+        .eq('id', student.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return res.json({
+        success: true,
+        message: 'Google account linked successfully',
+        user: { ...student, google_id: googleId, avatar_url: avatarUrl || student.avatar_url }
+      });
+    }
+  } catch (error) {
+    console.error('Link Google error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Unlink Google Account from existing user
+app.post('/api/auth/unlink-google', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, role } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+
+    if (role === 'coach') {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ google_id: null })
+        .eq('email', email.toLowerCase());
+
+      if (updateError) throw updateError;
+    } else {
+      const { error: updateError } = await supabase
+        .from('students')
+        .update({ google_id: null })
+        .eq('email', email.toLowerCase());
+
+      if (updateError) throw updateError;
+    }
+
+    res.json({ success: true, message: 'Google account unlinked successfully' });
+  } catch (error) {
+    console.error('Unlink Google error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Check if user has Google linked
+app.get('/api/auth/google-status', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
+    const { email, role } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+
+    let googleId = null;
+
+    if (role === 'coach') {
+      const { data: coach } = await supabase
+        .from('users')
+        .select('google_id')
+        .eq('email', email.toLowerCase())
+        .single();
+      googleId = coach?.google_id;
+    } else {
+      const { data: student } = await supabase
+        .from('students')
+        .select('google_id')
+        .eq('email', email.toLowerCase())
+        .single();
+      googleId = student?.google_id;
+    }
+
+    res.json({ linked: !!googleId });
+  } catch (error) {
+    console.error('Google status error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
