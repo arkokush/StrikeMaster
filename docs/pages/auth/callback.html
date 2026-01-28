@@ -113,10 +113,16 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../assets/js/config/api.js"></script>
   <script>
     const supabaseUrl = 'https://fxqddamrgadttkfxvjth.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cWRkYW1yZ2FkdHRrZnh2anRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTc5NjYsImV4cCI6MjA2MTY5Mzk2Nn0.SRMsJlBzJlBwC7S8F-4JvK-rqRB91qcCiOt0ycqXbZQ';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        detectSessionInUrl: true,
+        flowType: 'implicit'
+      }
+    });
 
     function showError(text) {
       document.getElementById('spinner').style.display = 'none';
@@ -137,98 +143,99 @@
       document.getElementById('message').style.display = 'block';
     }
 
-    async function handleCallback() {
+    async function processUser(user) {
+      console.log('Processing user:', user.email);
+      
+      // Create/update user in our backend
       try {
-        // Get the session from URL hash (Supabase puts tokens there)
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const res = await api.post('/api/auth/google-login', {
+          email: user.email,
+          name: user.user_metadata?.full_name || user.email.split('@')[0],
+          googleId: user.id,
+          avatarUrl: user.user_metadata?.avatar_url
+        });
         
-        if (error) {
-          console.error('Session error:', error);
-          showError('Failed to complete sign-in. Please try again.');
-          return;
-        }
-
-        if (!session) {
-          // No session yet, wait for hash to be processed
-          const { data, error: hashError } = await supabase.auth.getSession();
-          if (hashError || !data.session) {
-            showError('No session found. Please try signing in again.');
-            return;
+        const data = await res.json();
+        console.log('API response:', data);
+        
+        if (res.ok && data.user) {
+          // Store auth info
+          if (data.token) {
+            localStorage.setItem('bowling_token', data.token);
           }
-        }
+          localStorage.setItem('bowling_user', JSON.stringify(data.user));
+          localStorage.setItem('bowling_role', data.role || 'student');
+          localStorage.setItem('supabase_user', JSON.stringify(user));
 
-        const user = session?.user;
-        if (!user) {
-          showError('Could not retrieve user information.');
-          return;
-        }
-
-        // Create/update user in our backend
-        try {
-          const res = await api.post('/api/auth/google-login', {
+          showSuccess('Sign-in successful! Redirecting...');
+          
+          setTimeout(() => {
+            window.location.href = '../dashboard/teamSelector.html';
+          }, 1000);
+        } else if (data.needsTeam) {
+          localStorage.setItem('pending_google_user', JSON.stringify({
             email: user.email,
             name: user.user_metadata?.full_name || user.email.split('@')[0],
             googleId: user.id,
             avatarUrl: user.user_metadata?.avatar_url
-          });
-          
-          const data = await res.json();
-          
-          if (res.ok && data.user) {
-            // Store auth info
-            if (data.token) {
-              localStorage.setItem('bowling_token', data.token);
-            }
-            localStorage.setItem('bowling_user', JSON.stringify(data.user));
-            localStorage.setItem('bowling_role', data.role || 'student');
-            localStorage.setItem('supabase_user', JSON.stringify(user));
-
-            showSuccess('Sign-in successful! Redirecting...');
-            
-            setTimeout(() => {
-              window.location.href = '../dashboard/teamSelector.html';
-            }, 1000);
-          } else {
-            // User might need to join a team first
-            if (data.needsTeam) {
-              localStorage.setItem('pending_google_user', JSON.stringify({
-                email: user.email,
-                name: user.user_metadata?.full_name || user.email.split('@')[0],
-                googleId: user.id,
-                avatarUrl: user.user_metadata?.avatar_url
-              }));
-              showSuccess('Account created! Redirecting to team selection...');
-              setTimeout(() => {
-                window.location.href = 'joinTeam.html';
-              }, 1000);
-            } else {
-              showError(data.error || 'Failed to complete sign-in.');
-            }
-          }
-        } catch (apiError) {
-          console.error('API error:', apiError);
-          // Still store basic info and redirect
-          localStorage.setItem('bowling_user', JSON.stringify({
-            email: user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0]
           }));
-          localStorage.setItem('bowling_role', 'student');
-          localStorage.setItem('supabase_user', JSON.stringify(user));
-          
-          showSuccess('Signed in! Redirecting...');
+          showSuccess('Account created! Redirecting to team selection...');
           setTimeout(() => {
             window.location.href = '../dashboard/teamSelector.html';
           }, 1000);
+        } else {
+          showError(data.error || 'Failed to complete sign-in.');
         }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        // Still store basic info and redirect
+        localStorage.setItem('bowling_user', JSON.stringify({
+          email: user.email,
+          name: user.user_metadata?.full_name || user.email.split('@')[0],
+          avatar_url: user.user_metadata?.avatar_url
+        }));
+        localStorage.setItem('bowling_role', 'student');
+        localStorage.setItem('supabase_user', JSON.stringify(user));
         
-      } catch (err) {
-        console.error('Callback error:', err);
-        showError('An unexpected error occurred. Please try again.');
+        showSuccess('Signed in! Redirecting...');
+        setTimeout(() => {
+          window.location.href = '../dashboard/teamSelector.html';
+        }, 1000);
       }
     }
 
-    // Run on page load
-    handleCallback();
+    // Listen for auth state changes
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        await processUser(session.user);
+      }
+    });
+
+    // Also check immediately in case we already have a session
+    async function checkSession() {
+      // Parse hash manually as fallback
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token')) {
+        console.log('Found access token in URL, waiting for Supabase to process...');
+        // Give Supabase a moment to process the hash
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('Current session:', session?.user?.email, error);
+      
+      if (session?.user) {
+        await processUser(session.user);
+      } else if (!hash || !hash.includes('access_token')) {
+        showError('No session found. Please try signing in again.');
+      }
+      // If hash has token but no session yet, onAuthStateChange will handle it
+    }
+
+    // Run check after a brief delay to let Supabase initialize
+    setTimeout(checkSession, 500);
   </script>
 </body>
 </html>
