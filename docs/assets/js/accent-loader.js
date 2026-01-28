@@ -13,7 +13,8 @@
     
     // Check if color is light and set text color accordingly
     const isLightColor = (hex) => {
-      const c = hex.replace('#', '');
+      const c = hex.replace('#', '').trim();
+      if (c.length < 6) return false;
       const r = parseInt(c.substr(0, 2), 16);
       const g = parseInt(c.substr(2, 2), 16);
       const b = parseInt(c.substr(4, 2), 16);
@@ -28,6 +29,27 @@
     } else {
       document.documentElement.style.setProperty("--sidebar-text-color", "#ffffff");
       document.documentElement.classList.remove('light-sidebar');
+    }
+  }
+  
+  // Also check accent color for readability
+  const accentColor = localStorage.getItem("accentColor");
+  if (accentColor) {
+    const isLightAccent = (hex) => {
+      const c = hex.replace('#', '').trim();
+      if (c.length < 6) return false;
+      const r = parseInt(c.substr(0, 2), 16);
+      const g = parseInt(c.substr(2, 2), 16);
+      const b = parseInt(c.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.5;
+    };
+    
+    // If accent is light, set accent text to dark
+    if (isLightAccent(accentColor)) {
+      document.documentElement.style.setProperty("--accent-text-color", "#000000");
+    } else {
+      document.documentElement.style.setProperty("--accent-text-color", "#ffffff");
     }
   }
 })();

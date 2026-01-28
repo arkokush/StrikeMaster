@@ -84,7 +84,7 @@
     }
 
     .sidebar a:hover, .sidebar button:hover { background: rgba(255,255,255,0.1); }
-    .sidebar a.active { background: var(--accent-color); color: white; }
+    .sidebar a.active { background: var(--accent-color); color: var(--accent-text-color, white); }
     .sidebar a svg, .sidebar button svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
 
     #logoutBtn {
@@ -230,7 +230,7 @@
       gap: 8px;
     }
 
-    .btn-primary { background: var(--accent-color); color: white; }
+    .btn-primary { background: var(--accent-color); color: var(--accent-text-color, white); }
     .btn-primary:hover { filter: brightness(0.95); transform: translateY(-1px); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -523,9 +523,19 @@
     // Load user data
     const currentUser = auth.getUser();
     if (currentUser) {
-      document.getElementById('displayName').value = isStudent ? 'Student' : auth.getDisplayName();
+      // Get display name - try multiple fields
+      let displayName = '';
+      if (isStudent) {
+        displayName = currentUser.name || currentUser.display_name || 'Student';
+      } else {
+        displayName = auth.getDisplayName() || currentUser.first_name + ' ' + currentUser.last_name || currentUser.name || currentUser.display_name || 'Coach';
+      }
+      document.getElementById('displayName').value = displayName.trim();
       document.getElementById('email').value = currentUser.email || '';
       document.getElementById('userCode').textContent = currentUser.team_code || '------';
+    } else {
+      // No user data - redirect to login
+      console.error('No user data found');
     }
 
     // For students, hide editable features

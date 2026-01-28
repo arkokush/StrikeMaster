@@ -69,7 +69,7 @@
     }
 
     .nav-links a:hover { background: rgba(255,255,255,0.1); }
-    .nav-links a.active { background: var(--accent-color); color: white; }
+    .nav-links a.active { background: var(--accent-color); color: var(--accent-text-color, white); }
 
     .container {
       max-width: 1000px;
@@ -115,12 +115,12 @@
     }
 
     .tab-btn:hover { border-color: var(--accent-color); }
-    .tab-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+    .tab-btn.active { background: var(--accent-color); color: var(--accent-text-color, white); border-color: var(--accent-color); }
 
     /* Log Match Button */
     .log-match-btn {
       background: var(--accent-color);
-      color: white;
+      color: var(--accent-text-color, white);
       border: none;
       padding: 14px 32px;
       font-size: 15px;

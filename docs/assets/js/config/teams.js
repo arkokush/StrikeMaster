@@ -17,7 +17,7 @@ const TEAMS_CONFIG = {
     name: 'Bergen County Technical High School',
     shortName: 'Bergen Tech',
     logo: 'btLogo.png',
-    accentColor: ' #ad883a', // Gold
+    accentColor: '#ad883a', // Gold
     mainColor: '#000000'    // Black
   },
   // Bergenfield High School - Maroon and White
@@ -150,7 +150,7 @@ const TEAMS_CONFIG = {
     name: 'Indian Hills High School',
     shortName: 'Indian Hills',
     logo: 'ihLogo.png',
-     accentColor: '#c49919', // Gold
+    accentColor: '#c49919', // Gold
     mainColor: '#01004c'    // Blue
   },
   // Lakeland Regional High School - Red and Grey
@@ -322,7 +322,7 @@ const TEAMS_CONFIG = {
     name: 'River Dell Regional High School',
     shortName: 'River Dell',
     logo: 'rdLogo.png',
-    accentColor: ' #f9cf06',
+    accentColor: '#f9cf06',
     mainColor: '#000000'
   },
   // St. Joseph Regional High School - Green and Gold

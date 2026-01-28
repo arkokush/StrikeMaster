@@ -44,7 +44,7 @@ select, input, button {
 
 button {
     background: var(--accent-color);
-    border:none; color:#fff;
+    border:none; color: var(--accent-text-color, #fff);
     cursor:pointer;
     transition: all 0.2s;
 }
@@ -107,7 +107,7 @@ h2 {
     border-radius:6px; 
     border:none; 
     background: var(--accent-color); 
-    color:white; 
+    color: var(--accent-text-color, white); 
     cursor:pointer; 
 }
 

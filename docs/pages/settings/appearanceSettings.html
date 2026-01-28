@@ -105,7 +105,7 @@
 
     .sidebar a.active {
       background: var(--accent-color);
-      color: white;
+      color: var(--accent-text-color, white);
     }
 
     .sidebar a svg, .sidebar button svg {
@@ -679,6 +679,7 @@
         localStorage.setItem("accentColor", accentColor);
         document.documentElement.style.setProperty("--accent-color", accentColor);
         updatePresetSelection('accentPresets', accentColor);
+        updateAccentTextColor(accentColor);
       }
       if (mainColor) {
         document.getElementById('mainColorPicker').value = mainColor;
@@ -690,6 +691,20 @@
 
       updateCurrentLogoPreview();
       showMessage('Theme updated! Changes apply across all pages.', 'success');
+    }
+    
+    function updateAccentTextColor(hex) {
+      const c = hex.replace('#', '').trim();
+      const r = parseInt(c.substr(0, 2), 16);
+      const g = parseInt(c.substr(2, 2), 16);
+      const b = parseInt(c.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      
+      if (luminance > 0.5) {
+        document.documentElement.style.setProperty("--accent-text-color", "#000000");
+      } else {
+        document.documentElement.style.setProperty("--accent-text-color", "#ffffff");
+      }
     }
 
     function updateCurrentLogoPreview() {
@@ -723,6 +738,7 @@
       if (savedAccent) {
         accentPicker.value = savedAccent;
         document.documentElement.style.setProperty("--accent-color", savedAccent);
+        updateAccentTextColor(savedAccent);
       }
       if (savedMain) {
         mainPicker.value = savedMain;
@@ -739,6 +755,7 @@
         localStorage.setItem("accentColor", color);
         document.documentElement.style.setProperty("--accent-color", color);
         updatePresetSelection('accentPresets', color);
+        updateAccentTextColor(color);
       });
 
       document.querySelectorAll('#accentPresets .preset-color').forEach(preset => {
@@ -748,6 +765,7 @@
           localStorage.setItem("accentColor", color);
           document.documentElement.style.setProperty("--accent-color", color);
           updatePresetSelection('accentPresets', color);
+          updateAccentTextColor(color);
         });
       });
 
@@ -771,27 +789,34 @@
         });
       });
 
-      // Reset buttons
+      // Reset buttons - reset to current team's colors (from selected logo)
       document.getElementById("resetAccent").addEventListener("click", () => {
-        const defaultColor = "#ffa500";
+        // Get current team's accent color from the selected logo
+        const selectedLogo = availableLogos.find(l => l.file === currentLogo);
+        const defaultColor = selectedLogo ? selectedLogo.accentColor : "#ffa500";
         accentPicker.value = defaultColor;
         document.documentElement.style.setProperty("--accent-color", defaultColor);
         localStorage.setItem("accentColor", defaultColor);
         updatePresetSelection('accentPresets', defaultColor);
+        updateAccentTextColor(defaultColor);
+        showMessage('Accent color reset to team default', 'success');
       });
 
       document.getElementById("resetMain").addEventListener("click", () => {
-        const defaultColor = "#5f371c";
+        // Get current team's main color from the selected logo
+        const selectedLogo = availableLogos.find(l => l.file === currentLogo);
+        const defaultColor = selectedLogo ? selectedLogo.mainColor : "#5f371c";
         mainPicker.value = defaultColor;
         document.documentElement.style.setProperty("--main-color", defaultColor);
         localStorage.setItem("mainColor", defaultColor);
         updatePresetSelection('mainPresets', defaultColor);
         updateSidebarTextColor(defaultColor);
+        showMessage('Main color reset to team default', 'success');
       });
     }
 
     function updateSidebarTextColor(hex) {
-      const c = hex.replace('#', '');
+      const c = hex.replace('#', '').trim();
       const r = parseInt(c.substr(0, 2), 16);
       const g = parseInt(c.substr(2, 2), 16);
       const b = parseInt(c.substr(4, 2), 16);
@@ -799,9 +824,33 @@
       
       if (luminance > 0.5) {
         document.documentElement.style.setProperty("--sidebar-text-color", "#000000");
+        document.documentElement.classList.add('light-sidebar');
       } else {
         document.documentElement.style.setProperty("--sidebar-text-color", "#ffffff");
+        document.documentElement.classList.remove('light-sidebar');
       }
+    }
+    
+    // Ensure accent color has good contrast with backgrounds
+    function ensureAccentContrast(accentHex, mainHex) {
+      // Check if accent and main are too similar
+      const getColorValues = (hex) => {
+        const c = hex.replace('#', '').trim();
+        return {
+          r: parseInt(c.substr(0, 2), 16),
+          g: parseInt(c.substr(2, 2), 16),
+          b: parseInt(c.substr(4, 2), 16)
+        };
+      };
+      
+      const accent = getColorValues(accentHex);
+      const main = getColorValues(mainHex);
+      
+      // Calculate color difference
+      const diff = Math.abs(accent.r - main.r) + Math.abs(accent.g - main.g) + Math.abs(accent.b - main.b);
+      
+      // If colors are too similar (diff < 100), return a warning
+      return diff >= 100;
     }
 
     function updatePresetSelection(containerId, selectedColor) {
