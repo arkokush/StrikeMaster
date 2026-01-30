@@ -129,14 +129,38 @@
       color: var(--text-color);
       border-radius: 8px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       font-size: 14px;
       font-family: inherit;
       transition: all 0.2s;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
     }
 
     .tab-btn:hover { border-color: var(--accent-color); }
     .tab-btn.active { background: var(--accent-color); color: var(--accent-text-color, white); border-color: var(--accent-color); }
+
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .view-btn {
+      padding: 10px 20px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      font-family: inherit;
+      transition: all 0.2s;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .view-btn:hover { border-color: var(--accent-color); }
+    .view-btn.active { background: var(--accent-color); color: var(--accent-text-color, white); border-color: var(--accent-color); }
 
     /* Card */
     .card {
@@ -196,7 +220,7 @@
       padding: 12px 24px;
       background: var(--accent-color);
       color: white;
-      border: none;
+      border: 2px solid rgba(0, 0, 0, 0.18);
       border-radius: 8px;
       font-weight: 600;
       font-size: 14px;
@@ -204,6 +228,7 @@
       cursor: pointer;
       height: fit-content;
       transition: all 0.2s;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
     }
 
     .add-btn:hover { filter: brightness(0.95); }
@@ -247,6 +272,41 @@
     .remove-btn:hover { background: #fef2f2; }
 
     .no-players { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+
+    .spreadsheet-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .spreadsheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px;
+      background: var(--card-bg);
+      font-size: 14px;
+    }
+
+    .spreadsheet-table th {
+      background: var(--content-bg);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .spreadsheet-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .spreadsheet-table tbody tr:hover {
+      background: var(--content-bg);
+    }
 
     /* Stats Panel */
     .stats-panel {
@@ -397,6 +457,7 @@
       .stats-summary { grid-template-columns: repeat(2, 1fr); }
       .history-table { font-size: 12px; }
       .history-table th, .history-table td { padding: 8px 4px; }
+      .tabs, .view-toggle { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -434,6 +495,11 @@
       <button class="tab-btn active" data-gender="all">All</button>
       <button class="tab-btn" data-gender="boys">Boys</button>
       <button class="tab-btn" data-gender="girls">Girls</button>
+    </div>
+
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="cards">Card View</button>
+      <button class="view-btn" data-view="sheet">Spreadsheet View</button>
     </div>
 
     <div id="message" class="message"></div>
@@ -478,7 +544,7 @@
     </div>
 
     <!-- Players List -->
-    <div class="card">
+    <div class="card" id="playersListCard">
       <div class="card-header">
         <div class="icon">
           <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
@@ -492,6 +558,39 @@
       </div>
       <div id="playersList">
         <div class="no-players">Loading players...</div>
+      </div>
+    </div>
+
+    <div class="card" id="spreadsheetCard" style="display: none;">
+      <div class="card-header">
+        <div class="icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </div>
+        <div>
+          <h3>Player Averages</h3>
+          <p>Season averages across all matches</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="spreadsheet-container">
+          <table class="spreadsheet-table">
+            <thead>
+              <tr id="spreadsheetHeaderRow">
+                <th>Player</th>
+                <th>Matches</th>
+                <th>Avg G1</th>
+                <th>Avg G2</th>
+                <th>Avg G3</th>
+                <th>Overall Avg</th>
+              </tr>
+            </thead>
+            <tbody id="spreadsheetBody">
+              <tr><td colspan="6" class="no-players">Loading averages...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -573,6 +672,7 @@
 
     let currentGender = 'all';
     let currentSeason = window.SeasonContext ? SeasonContext.getSeason() : '2025-2026';
+    let currentView = 'cards';
     let coachId = null;
     let players = [];
     let selectedPlayerId = null;
@@ -599,6 +699,22 @@
           currentGender === 'all' ? 'All Players' : currentGender === 'boys' ? 'Boys Players' : 'Girls Players';
         closeStatsPanel();
         loadPlayers();
+        if (currentView === 'sheet') {
+          loadSpreadsheetData();
+        }
+      });
+    });
+
+    document.querySelectorAll('.view-toggle .view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-toggle .view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        document.getElementById('playersListCard').style.display = currentView === 'cards' ? 'block' : 'none';
+        document.getElementById('spreadsheetCard').style.display = currentView === 'sheet' ? 'block' : 'none';
+        if (currentView === 'sheet') {
+          loadSpreadsheetData();
+        }
       });
     });
 
@@ -650,6 +766,77 @@
       });
     }
 
+    function calculateAverageStats(records) {
+      let g1Sum = 0, g2Sum = 0, g3Sum = 0;
+      let g1Count = 0, g2Count = 0, g3Count = 0;
+
+      records.forEach(record => {
+        if (record.game1 !== null && record.game1 !== undefined) { g1Sum += record.game1; g1Count++; }
+        if (record.game2 !== null && record.game2 !== undefined) { g2Sum += record.game2; g2Count++; }
+        if (record.game3 !== null && record.game3 !== undefined) { g3Sum += record.game3; g3Count++; }
+      });
+
+      const totalSum = g1Sum + g2Sum + g3Sum;
+      const totalCount = g1Count + g2Count + g3Count;
+
+      return {
+        matches: records.length,
+        avgG1: g1Count ? (g1Sum / g1Count).toFixed(1) : '0.0',
+        avgG2: g2Count ? (g2Sum / g2Count).toFixed(1) : '0.0',
+        avgG3: g3Count ? (g3Sum / g3Count).toFixed(1) : '0.0',
+        overallAvg: totalCount ? (totalSum / totalCount).toFixed(1) : '0.0'
+      };
+    }
+
+    async function loadSpreadsheetData() {
+      const tbody = document.getElementById('spreadsheetBody');
+      const headerRow = document.getElementById('spreadsheetHeaderRow');
+      const showGender = currentGender === 'all';
+
+      headerRow.innerHTML = `
+        <th>Player</th>
+        ${showGender ? '<th>Gender</th>' : ''}
+        <th>Matches</th>
+        <th>Avg G1</th>
+        <th>Avg G2</th>
+        <th>Avg G3</th>
+        <th>Overall Avg</th>
+      `;
+
+      if (!players || players.length === 0) {
+        const colSpan = showGender ? 7 : 6;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="no-players">No players yet.</td></tr>`;
+        return;
+      }
+
+      const colSpan = showGender ? 7 : 6;
+      tbody.innerHTML = `<tr><td colspan="${colSpan}" class="no-players">Loading averages...</td></tr>`;
+
+      const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
+      const results = await Promise.all(players.map(async (player) => {
+        try {
+          const res = await fetch(`${API_BASE}/api/players/${player.id}/records`);
+          const records = res.ok ? await res.json() : [];
+          const seasonRecords = getSeasonFilteredRecords(records);
+          return { player, stats: calculateAverageStats(seasonRecords) };
+        } catch (err) {
+          return { player, stats: calculateAverageStats([]) };
+        }
+      }));
+
+      tbody.innerHTML = results.map(({ player, stats }) => `
+        <tr>
+          <td>${player.first_name} ${player.last_name}</td>
+          ${showGender ? `<td>${player._gender || currentGender}</td>` : ''}
+          <td>${stats.matches}</td>
+          <td>${stats.avgG1}</td>
+          <td>${stats.avgG2}</td>
+          <td>${stats.avgG3}</td>
+          <td>${stats.overallAvg}</td>
+        </tr>
+      `).join('');
+    }
+
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
       e.preventDefault();
       if (confirm('Are you sure you want to logout?')) {
@@ -677,7 +864,13 @@
           if (!response.ok) throw new Error('Failed to fetch players');
           players = await response.json();
         }
-        if (!players || players.length === 0) { container.innerHTML = '<div class="no-players">No players yet. Add your first player above!</div>'; return; }
+        if (!players || players.length === 0) {
+          container.innerHTML = '<div class="no-players">No players yet. Add your first player above!</div>';
+          if (currentView === 'sheet') {
+            loadSpreadsheetData();
+          }
+          return;
+        }
         container.innerHTML = players.map(player => `
           <div class="player-card" data-player-id="${player.id}" onclick="selectPlayer('${player.id}')">
             <div class="player-info">
@@ -689,6 +882,9 @@
             </div>
           </div>
         `).join('');
+        if (currentView === 'sheet') {
+          loadSpreadsheetData();
+        }
       } catch (error) { console.error('Error loading players:', error); container.innerHTML = '<div class="no-players">Error loading players.</div>'; }
     }
 
@@ -834,6 +1030,9 @@
           currentLocationFilter = 'all';
           document.getElementById('locationFilter').value = 'all';
           displayPlayerStats();
+        }
+        if (currentView === 'sheet') {
+          loadSpreadsheetData();
         }
       });
     }
