@@ -527,6 +527,7 @@ for (const [key, config] of Object.entries(TEAMS_CONFIG)) {
   teamLogos[key] = config.logo;
 }
 
+
 // Export for module usage if available
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -538,4 +539,11 @@ if (typeof module !== 'undefined' && module.exports) {
     getAvailableLogos,
     teamLogos
   };
+}
+
+// Expose to window for browser usage
+if (typeof window !== 'undefined') {
+  window.getTeamLogo = getTeamLogo;
+  window.getTeamConfig = getTeamConfig;
+  window.getTeamColors = getTeamColors;
 }
