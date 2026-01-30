@@ -56,18 +56,20 @@
 
     /* Sidebar */
     .sidebar {
-      width: 240px;
+      width: 220px;
       background: var(--main-color);
       color: var(--sidebar-text-color, white);
-      padding: 24px 0;
+      padding: 18px 0;
       position: fixed;
-      height: 100vh;
+      top: 0;
+      bottom: 0;
+      height: 100%;
       display: flex;
       flex-direction: column;
     }
 
     .sidebar-header {
-      padding: 0 20px 24px;
+      padding: 0 18px 18px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       margin-bottom: 16px;
       display: flex;
@@ -137,10 +139,10 @@
       background: none;
       border: none;
       color: var(--sidebar-text-color, rgba(255,255,255,0.85));
-      padding: 14px 20px;
+      padding: 12px 18px;
       text-align: left;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       text-decoration: none;
@@ -180,8 +182,8 @@
     /* Main content */
     .content {
       flex: 1;
-      margin-left: 240px;
-      padding: 32px 40px;
+      margin-left: 220px;
+      padding: 28px 32px;
       max-width: 900px;
     }
 
@@ -504,6 +506,18 @@
       transform: translateX(24px);
     }
 
+    .theme-select {
+      width: 100%;
+      max-width: 260px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--content-bg);
+      color: var(--text-color);
+      font-size: 14px;
+      font-family: inherit;
+    }
+
     @media (max-width: 768px) {
       .sidebar {
         width: 100%;
@@ -562,10 +576,6 @@
         <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
         Appearance
       </a>
-      <a href="teamsSettings.html">
-        <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
-        Teams
-      </a>
       <a href="accountInfo.html">
         <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         Account
@@ -621,72 +631,6 @@
         </div>
       </div>
 
-      <!-- Accent Color Card -->
-      <div class="card">
-        <div class="card-header">
-          <div class="icon">
-            <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
-          </div>
-          <div>
-            <h2>Accent Color</h2>
-            <p>Choose your primary brand color</p>
-          </div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <h3>Custom Color</h3>
-            <p>Pick any color you like</p>
-          </div>
-          <div class="color-picker-wrapper">
-            <input type="color" id="accentColorPicker" value="#ffa500">
-            <button class="btn btn-secondary" id="resetAccent">Reset</button>
-          </div>
-        </div>
-        <div class="preset-colors" id="accentPresets">
-          <div class="preset-color" data-color="#ffa500" style="background: #ffa500;" title="Orange"></div>
-          <div class="preset-color" data-color="#ef4444" style="background: #ef4444;" title="Red"></div>
-          <div class="preset-color" data-color="#3b82f6" style="background: #3b82f6;" title="Blue"></div>
-          <div class="preset-color" data-color="#22c55e" style="background: #22c55e;" title="Green"></div>
-          <div class="preset-color" data-color="#a855f7" style="background: #a855f7;" title="Purple"></div>
-          <div class="preset-color" data-color="#14b8a6" style="background: #14b8a6;" title="Teal"></div>
-          <div class="preset-color" data-color="#f59e0b" style="background: #f59e0b;" title="Amber"></div>
-          <div class="preset-color" data-color="#ec4899" style="background: #ec4899;" title="Pink"></div>
-        </div>
-      </div>
-
-      <!-- Sidebar Color Card -->
-      <div class="card">
-        <div class="card-header">
-          <div class="icon">
-            <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-          </div>
-          <div>
-            <h2>Sidebar Color</h2>
-            <p>Customize navigation background</p>
-          </div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <h3>Custom Color</h3>
-            <p>Match your school or team colors</p>
-          </div>
-          <div class="color-picker-wrapper">
-            <input type="color" id="mainColorPicker" value="#5f371c">
-            <button class="btn btn-secondary" id="resetMain">Reset</button>
-          </div>
-        </div>
-        <div class="preset-colors" id="mainPresets">
-          <div class="preset-color" data-color="#5f371c" style="background: #5f371c;" title="Brown"></div>
-          <div class="preset-color" data-color="#1e293b" style="background: #1e293b;" title="Slate"></div>
-          <div class="preset-color" data-color="#1e3a5f" style="background: #1e3a5f;" title="Navy"></div>
-          <div class="preset-color" data-color="#14532d" style="background: #14532d;" title="Forest"></div>
-          <div class="preset-color" data-color="#581c87" style="background: #581c87;" title="Purple"></div>
-          <div class="preset-color" data-color="#7f1d1d" style="background: #7f1d1d;" title="Maroon"></div>
-          <div class="preset-color" data-color="#0f172a" style="background: #0f172a;" title="Dark"></div>
-          <div class="preset-color" data-color="#374151" style="background: #374151;" title="Gray"></div>
-        </div>
-      </div>
-
       <!-- Team Logo Card -->
       <div class="card">
         <div class="card-header">
@@ -694,19 +638,16 @@
             <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           </div>
           <div>
-            <h2>Team Logo</h2>
-            <p>Select your school's logo</p>
+            <h2>Team Theme</h2>
+            <p>Logo and colors stay in sync</p>
           </div>
         </div>
-        <div class="current-preview">
-          <img id="currentLogoImg" src="../../assets/images/Team Logos/phLogo.png" alt="Current Logo">
-          <div class="info">
-            <h4 id="currentLogoName">Current Logo</h4>
-            <p>Displayed in navigation across all pages</p>
+        <div class="setting-row">
+          <div class="setting-info">
+            <h3>Team Selector</h3>
+            <p>Pick your school to set colors and logo</p>
           </div>
-        </div>
-        <div class="logo-grid" id="logoGrid">
-          <!-- Logos will be loaded here -->
+          <select id="teamLogoSelect" class="theme-select"></select>
         </div>
       </div>
     </div>
@@ -719,59 +660,48 @@
 
     // Initialize
     function init() {
-      initLogoGrid();
+      initLogoSelect();
       initTheme();
       initUiMode();
-      initColors();
     }
 
-    // Logo Grid
-    function initLogoGrid() {
-      const grid = document.getElementById('logoGrid');
-      grid.innerHTML = availableLogos.map(logo => `
-        <div class="logo-option ${logo.file === currentLogo ? 'selected' : ''}" 
-             data-logo="${logo.file}" 
-             data-accent="${logo.accentColor}" 
-             data-main="${logo.mainColor}">
-          <img src="../../assets/images/Team Logos/${logo.file}" alt="${logo.name}">
-          <span>${logo.name}</span>
-        </div>
+    function initLogoSelect() {
+      const select = document.getElementById('teamLogoSelect');
+      select.innerHTML = availableLogos.map(logo => `
+        <option value="${logo.file}">${logo.name}</option>
       `).join('');
 
-      grid.querySelectorAll('.logo-option').forEach(option => {
-        option.addEventListener('click', () => {
-          selectLogo(option.dataset.logo, option.dataset.accent, option.dataset.main);
-        });
-      });
+      if (availableLogos.some(logo => logo.file === currentLogo)) {
+        select.value = currentLogo;
+      } else if (availableLogos.length > 0) {
+        currentLogo = availableLogos[0].file;
+        select.value = currentLogo;
+        localStorage.setItem('teamLogo', currentLogo);
+      }
 
-      updateCurrentLogoPreview();
+      applyLogoTheme(select.value);
+
+      select.addEventListener('change', (event) => {
+        selectLogo(event.target.value);
+      });
     }
 
-    function selectLogo(logoFile, accentColor, mainColor) {
+    function selectLogo(logoFile) {
       currentLogo = logoFile;
       localStorage.setItem('teamLogo', logoFile);
+      applyLogoTheme(logoFile);
+      showMessage('Team theme updated! Changes apply across all pages.', 'success');
+    }
 
-      document.querySelectorAll('.logo-option').forEach(opt => {
-        opt.classList.toggle('selected', opt.dataset.logo === logoFile);
-      });
-
-      if (accentColor) {
-        document.getElementById('accentColorPicker').value = accentColor;
-        localStorage.setItem("accentColor", accentColor);
-        document.documentElement.style.setProperty("--accent-color", accentColor);
-        updatePresetSelection('accentPresets', accentColor);
-        updateAccentTextColor(accentColor);
-      }
-      if (mainColor) {
-        document.getElementById('mainColorPicker').value = mainColor;
-        localStorage.setItem("mainColor", mainColor);
-        document.documentElement.style.setProperty("--main-color", mainColor);
-        updatePresetSelection('mainPresets', mainColor);
-        updateSidebarTextColor(mainColor);
-      }
-
-      updateCurrentLogoPreview();
-      showMessage('Theme updated! Changes apply across all pages.', 'success');
+    function applyLogoTheme(logoFile) {
+      const logo = availableLogos.find(item => item.file === logoFile);
+      if (!logo) return;
+      document.documentElement.style.setProperty('--accent-color', logo.accentColor);
+      document.documentElement.style.setProperty('--main-color', logo.mainColor);
+      localStorage.setItem('accentColor', logo.accentColor);
+      localStorage.setItem('mainColor', logo.mainColor);
+      updateAccentTextColor(logo.accentColor);
+      updateSidebarTextColor(logo.mainColor);
     }
     
     function updateAccentTextColor(hex) {
@@ -786,12 +716,6 @@
       } else {
         document.documentElement.style.setProperty("--accent-text-color", "#ffffff");
       }
-    }
-
-    function updateCurrentLogoPreview() {
-      const logo = availableLogos.find(l => l.file === currentLogo);
-      document.getElementById('currentLogoImg').src = `../../assets/images/Team Logos/${currentLogo}`;
-      document.getElementById('currentLogoName').textContent = logo ? logo.name : currentLogo;
     }
 
     // Theme
@@ -820,95 +744,6 @@
       });
     }
 
-    // Colors
-    function initColors() {
-      const accentPicker = document.getElementById('accentColorPicker');
-      const mainPicker = document.getElementById('mainColorPicker');
-
-      // Load saved colors
-      const savedAccent = localStorage.getItem("accentColor");
-      const savedMain = localStorage.getItem("mainColor");
-
-      if (savedAccent) {
-        accentPicker.value = savedAccent;
-        document.documentElement.style.setProperty("--accent-color", savedAccent);
-        updateAccentTextColor(savedAccent);
-      }
-      if (savedMain) {
-        mainPicker.value = savedMain;
-        document.documentElement.style.setProperty("--main-color", savedMain);
-        updateSidebarTextColor(savedMain);
-      }
-
-      updatePresetSelection('accentPresets', savedAccent || "#ffa500");
-      updatePresetSelection('mainPresets', savedMain || "#5f371c");
-
-      // Accent color events
-      accentPicker.addEventListener("input", (e) => {
-        const color = e.target.value;
-        localStorage.setItem("accentColor", color);
-        document.documentElement.style.setProperty("--accent-color", color);
-        updatePresetSelection('accentPresets', color);
-        updateAccentTextColor(color);
-      });
-
-      document.querySelectorAll('#accentPresets .preset-color').forEach(preset => {
-        preset.addEventListener('click', () => {
-          const color = preset.dataset.color;
-          accentPicker.value = color;
-          localStorage.setItem("accentColor", color);
-          document.documentElement.style.setProperty("--accent-color", color);
-          updatePresetSelection('accentPresets', color);
-          updateAccentTextColor(color);
-        });
-      });
-
-      // Main color events
-      mainPicker.addEventListener("input", (e) => {
-        const color = e.target.value;
-        localStorage.setItem("mainColor", color);
-        document.documentElement.style.setProperty("--main-color", color);
-        updateSidebarTextColor(color);
-        updatePresetSelection('mainPresets', color);
-      });
-
-      document.querySelectorAll('#mainPresets .preset-color').forEach(preset => {
-        preset.addEventListener('click', () => {
-          const color = preset.dataset.color;
-          mainPicker.value = color;
-          localStorage.setItem("mainColor", color);
-          document.documentElement.style.setProperty("--main-color", color);
-          updateSidebarTextColor(color);
-          updatePresetSelection('mainPresets', color);
-        });
-      });
-
-      // Reset buttons - reset to current team's colors (from selected logo)
-      document.getElementById("resetAccent").addEventListener("click", () => {
-        // Get current team's accent color from the selected logo
-        const selectedLogo = availableLogos.find(l => l.file === currentLogo);
-        const defaultColor = selectedLogo ? selectedLogo.accentColor : "#ffa500";
-        accentPicker.value = defaultColor;
-        document.documentElement.style.setProperty("--accent-color", defaultColor);
-        localStorage.setItem("accentColor", defaultColor);
-        updatePresetSelection('accentPresets', defaultColor);
-        updateAccentTextColor(defaultColor);
-        showMessage('Accent color reset to team default', 'success');
-      });
-
-      document.getElementById("resetMain").addEventListener("click", () => {
-        // Get current team's main color from the selected logo
-        const selectedLogo = availableLogos.find(l => l.file === currentLogo);
-        const defaultColor = selectedLogo ? selectedLogo.mainColor : "#5f371c";
-        mainPicker.value = defaultColor;
-        document.documentElement.style.setProperty("--main-color", defaultColor);
-        localStorage.setItem("mainColor", defaultColor);
-        updatePresetSelection('mainPresets', defaultColor);
-        updateSidebarTextColor(defaultColor);
-        showMessage('Main color reset to team default', 'success');
-      });
-    }
-
     function updateSidebarTextColor(hex) {
       const c = hex.replace('#', '').trim();
       const r = parseInt(c.substr(0, 2), 16);
@@ -925,34 +760,6 @@
       }
     }
     
-    // Ensure accent color has good contrast with backgrounds
-    function ensureAccentContrast(accentHex, mainHex) {
-      // Check if accent and main are too similar
-      const getColorValues = (hex) => {
-        const c = hex.replace('#', '').trim();
-        return {
-          r: parseInt(c.substr(0, 2), 16),
-          g: parseInt(c.substr(2, 2), 16),
-          b: parseInt(c.substr(4, 2), 16)
-        };
-      };
-      
-      const accent = getColorValues(accentHex);
-      const main = getColorValues(mainHex);
-      
-      // Calculate color difference
-      const diff = Math.abs(accent.r - main.r) + Math.abs(accent.g - main.g) + Math.abs(accent.b - main.b);
-      
-      // If colors are too similar (diff < 100), return a warning
-      return diff >= 100;
-    }
-
-    function updatePresetSelection(containerId, selectedColor) {
-      document.querySelectorAll(`#${containerId} .preset-color`).forEach(preset => {
-        preset.classList.toggle('selected', preset.dataset.color === selectedColor);
-      });
-    }
-
     function showMessage(text, type) {
       const msg = document.getElementById('message');
       msg.textContent = text;
