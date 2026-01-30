@@ -10,37 +10,113 @@
   <link rel="stylesheet" type="text/css" href="../../assets/css/cartoon-ui.css">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/season-context.js"></script>
   <script src="../../assets/js/config/api.js"></script>
   <script src="../../assets/js/config/teams.js"></script>
   <script src="../../assets/js/auth-helper.js"></script>
   <style>
     body {
       margin: 0;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Nunito', 'Segoe UI', sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
     }
 
     .container {
-      max-width: 1200px;
-      margin: 30px auto;
-      padding: 0 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 24px;
     }
 
     .page-header {
-      text-align: center;
-      padding: 30px 0;
+      text-align: left;
+      padding: 8px 0 24px;
     }
 
     .page-header h1 {
-      color: var(--accent-color);
-      font-size: 36px;
-      margin-bottom: 10px;
+      color: var(--text-color);
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0 0 8px;
     }
 
     .page-header p {
-      color: var(--text-color);
+      color: var(--text-muted);
       font-size: 16px;
+      margin: 0;
+    }
+
+    .navbar {
+      background: var(--main-color);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar .logo img {
+      height: 46px;
+      width: 46px;
+      object-fit: contain;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .season-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.12);
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .season-select label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--text-color);
+    }
+
+    .season-select select {
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text-color);
+      font-family: inherit;
+    }
+
+    .season-select select:focus {
+      outline: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover { background: rgba(255,255,255,0.1); }
+    .nav-links a.active { background: var(--accent-color); color: var(--accent-text-color, white); }
     }
 
     /* View Toggle */
@@ -53,26 +129,24 @@
 
     .view-btn {
       padding: 12px 24px;
-      border: none;
+      border: 1px solid var(--border-color);
       background: var(--card-bg);
       color: var(--text-color);
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .view-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border-color: var(--accent-color);
     }
 
     .view-btn.active {
       background: var(--accent-color);
-      color: white;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      color: var(--accent-text-color, white);
+      border-color: var(--accent-color);
     }
 
     /* Filters */
@@ -82,7 +156,7 @@
       margin-bottom: 20px;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
     }
 
     .filter-group {
@@ -97,8 +171,8 @@
 
     .filter-group select {
       padding: 8px 12px;
-      border: 2px solid var(--accent-color);
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
       background: var(--card-bg);
       color: var(--text-color);
       font-size: 14px;
@@ -106,12 +180,12 @@
 
     .export-btn {
       background: var(--accent-color);
-      color: white;
-      border: none;
+      color: var(--accent-text-color, white);
+      border: 1px solid var(--accent-color);
       padding: 10px 20px;
-      border-radius: 8px;
+      border-radius: 999px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
       transition: all 0.2s ease;
     }
@@ -129,26 +203,24 @@
 
     .tab-btn {
       padding: 12px 24px;
-      border: none;
+      border: 1px solid var(--border-color);
       background: var(--card-bg);
       color: var(--text-color);
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .tab-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border-color: var(--accent-color);
     }
 
     .tab-btn.active {
       background: var(--accent-color);
-      color: white;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      color: var(--accent-text-color, white);
+      border-color: var(--accent-color);
     }
 
     /* Stats Summary Cards */
@@ -161,8 +233,8 @@
 
     .stat-card {
       background: var(--card-bg);
-      border: 2px solid var(--accent-color);
-      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       padding: 15px;
       text-align: center;
     }
@@ -175,8 +247,7 @@
 
     .stat-card .stat-label {
       font-size: 12px;
-      color: var(--text-color);
-      opacity: 0.8;
+      color: var(--text-muted);
       text-transform: uppercase;
     }
 
@@ -433,18 +504,39 @@
     .stats-view.active, .players-view.active {
       display: block;
     }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 12px 16px; }
+      .nav-left { gap: 10px; }
+      .season-select { padding: 4px 8px; }
+      .season-select label { display: none; }
+      .nav-links { gap: 4px; }
+      .nav-links a { padding: 8px 12px; font-size: 13px; }
+      .container { padding: 20px 16px; }
+      .view-toggle, .tabs { flex-wrap: wrap; justify-content: center; }
+    }
   </style>
 </head>
 <body>
   <div class="navbar">
-    <a href="../../index.html" class="logo">
-      <img id="navLogo" src="../../assets/images/Team Logos/phLogo.png" alt="Strike Master Logo">
-    </a>
+    <div class="nav-left">
+      <a href="../../index.html" class="logo">
+        <img id="navLogo" src="../../assets/images/Team Logos/phLogo.png" alt="School logo">
+      </a>
+      <div class="season-select">
+        <label for="seasonSelect">Season</label>
+        <select id="seasonSelect" data-season-select>
+          <option value="2025-2026">2025-26</option>
+          <option value="2024-2025">2024-25</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    </div>
     <div class="nav-links">
       <a href="home.html">Home</a>
       <a href="players.html">Players</a>
       <a href="../settings/appearanceSettings.html">Settings</a>
-      <a href="myTeam.html" style="color: var(--accent-color);">My Team</a>
+      <a href="myTeam.html" class="active">My Team</a>
       <a href="#" id="logoutBtn" style="color:#dc3545;">Logout</a>
     </div>
   </div>
@@ -464,14 +556,6 @@
     <!-- Match Stats View -->
     <div class="stats-view active" id="statsView">
       <div class="filters">
-        <div class="filter-group">
-          <label>Season:</label>
-          <select id="seasonFilter">
-            <option value="2025-2026">2025-2026</option>
-            <option value="2024-2025">2024-2025</option>
-            <option value="all">All Time</option>
-          </select>
-        </div>
         <button class="export-btn" onclick="exportToCSV()">
           Export CSV
         </button>
@@ -594,7 +678,7 @@
 
   <script>
     // Load saved logo
-    const savedLogo = localStorage.getItem('selectedLogo');
+    const savedLogo = localStorage.getItem('teamLogo') || localStorage.getItem('selectedLogo');
     if (savedLogo) document.getElementById('navLogo').src = '../../assets/images/Team Logos/' + savedLogo;
 
     // Require authentication
@@ -606,7 +690,7 @@
     let coachId = currentUser?.id;
     let currentStatsGender = 'all';
     let currentPlayerGender = 'boys';
-    let currentSeason = '2025-2026';
+    let currentSeason = window.SeasonContext ? SeasonContext.getSeason() : '2025-2026';
     let allMatches = [];
     let players = [];
     let sortColumn = 'date';
@@ -676,11 +760,12 @@
       });
     });
 
-    // Season filter
-    document.getElementById('seasonFilter').addEventListener('change', (e) => {
-      currentSeason = e.target.value;
-      loadMatches();
-    });
+    if (window.SeasonContext) {
+      SeasonContext.onChange((season) => {
+        currentSeason = season;
+        renderData();
+      });
+    }
 
     // Sortable columns
     document.querySelectorAll('.sortable').forEach(th => {

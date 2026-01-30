@@ -31,13 +31,13 @@
     }
 
 :root {
-  --accent-color: #ffa500; /* default — overwritten by JS if user chooses */
+  --accent-color: #ff6b6b; /* default — overwritten by JS if user chooses */
   --accent-color-light: color-mix(in srgb, var(--accent-color) 70%, white);
   --accent-color-dark: color-mix(in srgb, var(--accent-color) 70%, black);
 }
 
 :root {
-  --main-color: #ffa500; /* default — overwritten by JS if user chooses */
+  --main-color: #6ecbff; /* default — overwritten by JS if user chooses */
 }
 
 /* Ensure form controls are readable on all themes */

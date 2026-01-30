@@ -68,21 +68,17 @@
 document.addEventListener('DOMContentLoaded', function() {
   const savedLogo = localStorage.getItem('teamLogo');
   if (savedLogo) {
-    // Find logo images in the navbar
-    const logoImgs = document.querySelectorAll('.navbar .logo img');
+    const logoImgs = document.querySelectorAll('.navbar .logo img, [data-team-logo]');
     logoImgs.forEach(img => {
-      // Determine the relative path based on current page depth
       const currentPath = window.location.pathname;
       let basePath = '';
-      
+
       if (currentPath.includes('/pages/')) {
-        // We're in a subdirectory of pages
         basePath = '../../assets/images/Team Logos/';
       } else {
-        // We're at root level (index.html)
         basePath = 'assets/images/Team Logos/';
       }
-      
+
       img.src = basePath + savedLogo;
     });
   }

@@ -10,35 +10,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="../../assets/js/accent-loader.js"></script>
+  <script src="../../assets/js/season-context.js"></script>
   <script src="../../assets/js/config/api.js"></script>
   <script src="../../assets/js/config/teams.js"></script>
   <script src="../../assets/js/auth-helper.js"></script>
   <style>
     :root {
-      --accent-color: #ffa500;
-      --main-color: #5f371c;
-      --bg-color: #f8fafc;
-      --content-bg: #f1f5f9;
+      --accent-color: #ff6b6b;
+      --main-color: #6ecbff;
+      --bg-color: #fff4c2;
+      --content-bg: #fff9e2;
       --card-bg: #ffffff;
-      --text-color: #0f172a;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
+      --text-color: #1f1f1f;
+      --text-muted: #4b4b4b;
+      --border-color: rgba(0, 0, 0, 0.12);
     }
 
     [data-theme="dark"] {
-      --bg-color: #0f172a;
-      --content-bg: #1e293b;
-      --card-bg: #1e293b;
-      --text-color: #f1f5f9;
-      --text-muted: #94a3b8;
-      --border-color: #334155;
+      --bg-color: #1f1f1f;
+      --content-bg: #2a2a2a;
+      --card-bg: #2f2f2f;
+      --text-color: #f8f8f8;
+      --text-muted: #c8c8c8;
+      --border-color: rgba(255, 255, 255, 0.18);
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Nunito', 'Segoe UI', sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
       min-height: 100vh;
@@ -56,7 +57,44 @@
       z-index: 100;
     }
 
-    .navbar .logo img { height: 40px; object-fit: contain; }
+    .navbar .logo img { height: 46px; width: 46px; object-fit: contain; }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .season-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.12);
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .season-select label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--text-color);
+    }
+
+    .season-select select {
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text-color);
+      font-family: inherit;
+    }
+
+    .season-select select:focus {
+      outline: none;
+    }
 
     .nav-links { display: flex; gap: 8px; }
 
@@ -65,7 +103,7 @@
       text-decoration: none;
       padding: 10px 16px;
       border-radius: 8px;
-      font-weight: 500;
+      font-weight: 600;
       font-size: 14px;
       transition: all 0.2s;
     }
@@ -933,6 +971,9 @@
 
     @media (max-width: 768px) {
       .navbar { padding: 12px 16px; }
+      .nav-left { gap: 10px; }
+      .season-select { padding: 4px 8px; }
+      .season-select label { display: none; }
       .nav-links { gap: 4px; }
       .nav-links a { padding: 8px 12px; font-size: 13px; }
       .container { padding: 20px 16px; }
@@ -967,9 +1008,19 @@
 </head>
 <body>
   <div class="navbar">
-    <a href="../../index.html" class="logo">
-      <img id="navLogo" src="../../assets/images/BowlingPinCartoon.png" alt="BowlingPinCartoon" style="height:48px;width:48px;object-fit:contain;" />
-    </a>
+    <div class="nav-left">
+      <a href="../../index.html" class="logo">
+        <img id="navLogo" src="../../assets/images/BowlingPinCartoon.png" alt="School logo" />
+      </a>
+      <div class="season-select">
+        <label for="seasonSelect">Season</label>
+        <select id="seasonSelect" data-season-select>
+          <option value="2025-2026">2025-26</option>
+          <option value="2024-2025">2024-25</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    </div>
     <div class="nav-links">
       <a href="home.html" class="active">Home</a>
       <a href="players.html">Players</a>
@@ -1142,10 +1193,11 @@
 
   <script>
     // Load saved logo
-    const savedLogo = localStorage.getItem('selectedLogo');
+    const savedLogo = localStorage.getItem('teamLogo') || localStorage.getItem('selectedLogo');
     if (savedLogo) document.getElementById('navLogo').src = '../../assets/images/Team Logos/' + savedLogo;
 
     let currentGender = 'all';
+    let currentSeason = window.SeasonContext ? SeasonContext.getSeason() : '2025-2026';
     let coachId = null;
     let players = [];
     let allPlayers = { boys: [], girls: [] };
@@ -1798,11 +1850,38 @@
       return totalWood;
     }
 
+    function isMatchInSeason(matchDate, season) {
+      if (season === 'all' || !matchDate) return true;
+      const [startYear, endYear] = season.split('-').map(Number);
+      const date = new Date(matchDate);
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      if (month >= 8) {
+        return year === startYear;
+      }
+      return year === endYear;
+    }
+
+    function filterMatchesBySeason(matches, season) {
+      return matches.filter(match => isMatchInSeason(match.match_date, season));
+    }
+
+    function updateSeasonTitle() {
+      const title = document.getElementById('sectionTitle');
+      if (!title) return;
+      if (currentSeason === 'all') {
+        title.textContent = 'All Seasons Matches';
+        return;
+      }
+      title.textContent = `${currentSeason} Season Matches`;
+    }
+
     // Load matches
     async function loadMatches() {
       const container = document.getElementById('matchesContainer');
       
       try {
+        updateSeasonTitle();
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
         let url = `${API_BASE}/api/matches?coachId=${coachId}`;
         if (currentGender !== 'all') {
@@ -1813,11 +1892,12 @@
         if (!response.ok) throw new Error('Failed to fetch matches');
         
         const matches = await response.json();
+        const filteredMatches = filterMatchesBySeason(matches || [], currentSeason);
 
-        if (!matches || matches.length === 0) {
+        if (!filteredMatches || filteredMatches.length === 0) {
           container.innerHTML = `
             <div class="no-matches">
-              <p>No matches recorded yet.</p>
+              <p>No matches for this season yet.</p>
               <p>Click "Log New Match" to add your first match!</p>
             </div>
           `;
@@ -1825,11 +1905,11 @@
         }
 
         // Sort matches by date (newest first)
-        matches.sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
+        filteredMatches.sort((a, b) => new Date(b.match_date) - new Date(a.match_date));
 
         // Build HTML
         let html = '';
-        for (const match of matches) {
+        for (const match of filteredMatches) {
           // Fetch records for this match
           let records = [];
           try {
@@ -2174,6 +2254,13 @@
         noticeDiv.textContent = 'Student View (Read-Only)';
         document.querySelector('.tabs').after(noticeDiv);
       }
+    }
+
+    if (window.SeasonContext) {
+      SeasonContext.onChange((season) => {
+        currentSeason = season;
+        loadMatches();
+      });
     }
 
     // Initialize
