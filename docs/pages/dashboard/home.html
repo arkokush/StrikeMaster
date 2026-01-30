@@ -111,17 +111,6 @@
     .nav-links a:hover { background: rgba(255,255,255,0.1); }
     .nav-links a.active { background: var(--accent-color); color: var(--accent-text-color, white); }
 
-    .nav-team-logo {
-      width: 36px;
-      height: 36px;
-      object-fit: contain;
-      border-radius: 10px;
-      padding: 4px;
-      background: rgba(255, 255, 255, 0.85);
-      border: 2px solid var(--button-border-color, rgba(0, 0, 0, 0.25));
-      box-shadow: 0 4px 0 var(--button-shadow-color, rgba(0, 0, 0, 0.18));
-    }
-
     .container {
       max-width: 1000px;
       margin: 0 auto;
@@ -159,9 +148,9 @@
 
     .tab-btn {
       padding: 10px 24px;
-      border: 2px solid var(--button-border-color, var(--border-color));
-      background: var(--card-bg);
-      color: var(--text-color);
+      border: 2px solid var(--dashboard-button-border, var(--button-border-color, var(--border-color)));
+      background: var(--dashboard-button-bg, var(--card-bg));
+      color: var(--dashboard-button-text, var(--text-color));
       border-radius: 8px;
       cursor: pointer;
       font-weight: 500;
@@ -175,6 +164,15 @@
     .tab-btn.active { background: var(--accent-color); color: var(--accent-text-color, white); border-color: var(--accent-color); }
 
     /* Log Match Button */
+    .log-match-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
     .log-match-btn {
       background: var(--accent-color);
       color: var(--accent-text-color, white);
@@ -184,8 +182,9 @@
       font-weight: 600;
       border-radius: 10px;
       cursor: pointer;
-      display: block;
-      margin: 0 auto 28px auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-family: inherit;
       transition: all 0.2s;
       box-shadow: 0 4px 0 var(--button-shadow-color, rgba(0, 0, 0, 0.18));
@@ -999,7 +998,6 @@
       .season-select label { display: none; }
       .nav-links { gap: 4px; }
       .nav-links a { padding: 8px 12px; font-size: 13px; }
-      .nav-team-logo { width: 30px; height: 30px; padding: 3px; }
       .container { padding: 20px 16px; }
 
       .form-row {
@@ -1051,7 +1049,6 @@
       <a href="../settings/appearanceSettings.html">Settings</a>
       <a href="myTeam.html">My Team</a>
       <a href="#" id="logoutBtn" style="color:#fca5a5;">Logout</a>
-      <img class="nav-team-logo" data-team-logo src="../../assets/images/Team Logos/phLogo.png" alt="Team logo">
     </div>
   </div>
 
@@ -1067,7 +1064,16 @@
       <button class="tab-btn" data-gender="girls">Girls Team</button>
     </div>
 
-    <button class="log-match-btn" id="logMatchBtn">+ Log New Match</button>
+    <div class="log-match-actions" id="logMatchActions">
+      <button class="log-match-btn" id="logMatchBtn">+ Log New Match</button>
+      <div class="match-gender-select">
+        <label for="logMatchGender">Log For</label>
+        <select id="logMatchGender">
+          <option value="boys">Boys</option>
+          <option value="girls">Girls</option>
+        </select>
+      </div>
+    </div>
 
     <div id="message" class="message"></div>
 
@@ -1233,6 +1239,12 @@
     let coachId = null;
     let players = [];
     let allPlayers = { boys: [], girls: [] };
+
+    function getLogMatchGender() {
+      const select = document.getElementById('logMatchGender');
+      if (!select) return currentGender;
+      return select.value || currentGender;
+    }
 
     // Calculate match result based on opponent scores
     function calculateMatchResult() {
@@ -1488,6 +1500,10 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentGender = btn.dataset.gender;
+        const logMatchGender = document.getElementById('logMatchGender');
+        if (logMatchGender && currentGender !== 'all') {
+          logMatchGender.value = currentGender;
+        }
         document.getElementById('sectionTitle').textContent = 
           currentGender === 'boys' ? 'Boys Recent Matches' : 
           currentGender === 'girls' ? 'Girls Recent Matches' : 'All Recent Matches';
@@ -1502,7 +1518,7 @@
       document.getElementById('matchModal').classList.add('active');
       document.getElementById('matchDate').valueAsDate = new Date();
       // Load players for the modal
-      loadPlayers();
+      loadPlayers(getLogMatchGender());
     });
 
     document.getElementById('closeModal').addEventListener('click', () => {
@@ -1523,11 +1539,12 @@
     });
 
     // Load players for the form
-    async function loadPlayers() {
+    async function loadPlayers(genderOverride) {
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
-        
-        if (currentGender === 'all') {
+        const activeGender = genderOverride || currentGender;
+
+        if (activeGender === 'all') {
           // Load both boys and girls players
           const [boysResponse, girlsResponse] = await Promise.all([
             fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=boys`),
@@ -1541,7 +1558,7 @@
           players = [...allPlayers.boys, ...allPlayers.girls];
           renderAllPlayersTable();
         } else {
-          const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${currentGender}`);
+          const response = await fetch(`${API_BASE}/api/players?coachId=${coachId}&gender=${activeGender}`);
           
           if (!response.ok) throw new Error('Failed to fetch players');
           
@@ -1671,7 +1688,8 @@
       e.preventDefault();
       
       const isEditing = editingMatchId !== null;
-      const isAllMode = currentGender === 'all' && !isEditing;
+      const selectedGender = getLogMatchGender();
+      const isAllMode = selectedGender === 'all' && !isEditing;
       
       const baseMatchData = {
         coachId: coachId,
@@ -1801,7 +1819,7 @@
           showMessage(`${matchesCreated} match${matchesCreated > 1 ? 'es' : ''} saved successfully!`, 'success');
         } else {
           // Create single gender match
-          const matchData = { ...baseMatchData, gender: currentGender };
+          const matchData = { ...baseMatchData, gender: selectedGender };
           
           const matchResponse = await fetch(`${API_BASE}/api/matches`, {
             method: 'POST',
@@ -2143,6 +2161,8 @@
         // Set editing state
         editingMatchId = matchId;
         editingMatchGender = match.gender;
+        const logMatchGender = document.getElementById('logMatchGender');
+        if (logMatchGender) logMatchGender.value = match.gender;
         
         // Update modal title
         document.querySelector('.modal-header h2').textContent = 'Edit Match';
@@ -2249,6 +2269,8 @@
       document.getElementById('matchForm').reset();
       populateLocationDropdown();
       hideAddLocation();
+      document.getElementById('playersTableBody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center; color:#888;">Loading players...</td></tr>';
       
       // Reset opponent scores section
       document.getElementById('teamG1').value = '';
@@ -2261,11 +2283,6 @@
       document.getElementById('oppTotal').textContent = '0';
       document.getElementById('pointsResultCard').style.display = 'none';
       
-      if (currentGender === 'all') {
-        renderAllPlayersTable();
-      } else {
-        renderPlayersTable();
-      }
     }
 
     // Check if user is a student (read-only access)
@@ -2279,6 +2296,8 @@
         // Hide "Log New Match" button
         const logBtn = document.getElementById('logMatchBtn');
         if (logBtn) logBtn.style.display = 'none';
+        const logActions = document.getElementById('logMatchActions');
+        if (logActions) logActions.style.display = 'none';
 
         // Add a read-only notice
         const noticeDiv = document.createElement('div');
@@ -2307,3 +2326,32 @@
   </script>
 </body>
 </html>
+    .match-gender-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--dashboard-button-bg, var(--card-bg));
+      border: 2px solid var(--dashboard-button-border, var(--button-border-color, rgba(0, 0, 0, 0.2)));
+      box-shadow: 0 4px 0 var(--button-shadow-color, rgba(0, 0, 0, 0.12));
+    }
+
+    .match-gender-select label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--dashboard-button-text, var(--text-color));
+    }
+
+    .match-gender-select select {
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--dashboard-button-text, var(--text-color));
+      font-family: inherit;
+    }
+
+    .match-gender-select select:focus { outline: none; }

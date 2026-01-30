@@ -32,8 +32,8 @@
     }
   }
   
-  // Also check accent color for readability
   const accentColor = localStorage.getItem("accentColor");
+  let accentTextColor = null;
   if (accentColor) {
     const isLightAccent = (hex) => {
       const c = hex.replace('#', '').trim();
@@ -45,12 +45,12 @@
       return luminance > 0.5;
     };
     
-    // If accent is light, set accent text to dark
     if (isLightAccent(accentColor)) {
-      document.documentElement.style.setProperty("--accent-text-color", "#000000");
+      accentTextColor = "#000000";
     } else {
-      document.documentElement.style.setProperty("--accent-text-color", "#ffffff");
+      accentTextColor = "#ffffff";
     }
+    document.documentElement.style.setProperty("--accent-text-color", accentTextColor);
   }
 
   const buttonColor = accentColor || saved;
@@ -71,6 +71,32 @@
       } else {
         document.documentElement.style.setProperty("--button-border-color", "rgba(0, 0, 0, 0.22)");
         document.documentElement.style.setProperty("--button-shadow-color", "rgba(0, 0, 0, 0.16)");
+      }
+    }
+  }
+
+  const mainColor = localStorage.getItem("mainColor");
+  if (mainColor && accentColor) {
+    const c = mainColor.replace('#', '').trim();
+    if (c.length >= 6) {
+      const r = parseInt(c.substr(0, 2), 16);
+      const g = parseInt(c.substr(2, 2), 16);
+      const b = parseInt(c.substr(4, 2), 16);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const chroma = max - min;
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      const isVeryLight = luminance > 0.88;
+      const isGray = chroma < 18;
+
+      if (isVeryLight || isGray) {
+        document.documentElement.style.setProperty("--dashboard-button-bg", accentColor);
+        document.documentElement.style.setProperty("--dashboard-button-text", accentTextColor || "#ffffff");
+        document.documentElement.style.setProperty("--dashboard-button-border", "rgba(0, 0, 0, 0.28)");
+      } else {
+        document.documentElement.style.setProperty("--dashboard-button-bg", "var(--card-bg)");
+        document.documentElement.style.setProperty("--dashboard-button-text", "var(--text-color)");
+        document.documentElement.style.setProperty("--dashboard-button-border", "var(--button-border-color)");
       }
     }
   }
