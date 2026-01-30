@@ -995,18 +995,37 @@
         
         const opponentLogo = getTeamLogo(match.opponent) || '';
         
-        // Show final score (your points - opponent points)
+        // Calculate and show final score out of 7 (2/game, 1 for total)
         let resultClass = '';
-        const yourPoints = match.your_points || 0;
-        const oppPoints = match.opponent_points || 0;
-        let resultText = `${yourPoints}-${oppPoints}`;
-        if (match.result === 'win') {
-          resultClass = 'result-win';
-        } else if (match.result === 'loss') {
-          resultClass = 'result-loss';
-        } else if (match.result === 'tie') {
-          resultClass = 'result-tie';
+        // Use stored game scores if available, else fallback to points/result
+        let teamG1 = match.team_g1 || 0;
+        let teamG2 = match.team_g2 || 0;
+        let teamG3 = match.team_g3 || 0;
+        let oppG1 = match.opp_g1 || 0;
+        let oppG2 = match.opp_g2 || 0;
+        let oppG3 = match.opp_g3 || 0;
+        let teamTotal = teamG1 + teamG2 + teamG3;
+        let oppTotal = oppG1 + oppG2 + oppG3;
+        let ourPoints = 0, oppPoints = 0;
+        if (teamG1 > oppG1) ourPoints += 2; else if (oppG1 > teamG1) oppPoints += 2;
+        if (teamG2 > oppG2) ourPoints += 2; else if (oppG2 > teamG2) oppPoints += 2;
+        if (teamG3 > oppG3) ourPoints += 2; else if (oppG3 > teamG3) oppPoints += 2;
+        if (teamTotal > oppTotal) ourPoints += 1; else if (oppTotal > teamTotal) oppPoints += 1;
+        // If no game scores, fallback to stored points/result
+        let hasGameScores = teamG1 || teamG2 || teamG3 || oppG1 || oppG2 || oppG3;
+        if (!hasGameScores) {
+          ourPoints = match.your_points || 0;
+          oppPoints = match.opponent_points || 0;
+          if ((ourPoints === 0 && oppPoints === 0) && match.result) {
+            if (match.result === 'win') { ourPoints = 7; oppPoints = 0; }
+            else if (match.result === 'loss') { ourPoints = 0; oppPoints = 7; }
+            else if (match.result === 'tie') { ourPoints = 3.5; oppPoints = 3.5; }
+          }
         }
+        if (ourPoints > oppPoints) resultClass = 'result-win';
+        else if (oppPoints > ourPoints) resultClass = 'result-loss';
+        else if (ourPoints === oppPoints && (ourPoints !== 0 || oppPoints !== 0)) resultClass = 'result-tie';
+        let resultText = `${ourPoints} - ${oppPoints}`;
         
         // Highlight rows
         let rowClass = '';
