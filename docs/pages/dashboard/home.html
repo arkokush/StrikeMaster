@@ -138,6 +138,25 @@
       font-size: 15px;
     }
 
+    .brand-logo {
+      display: flex;
+      justify-content: center;
+      margin: 0 0 10px 0;
+    }
+
+    .brand-logo svg {
+      width: min(320px, 100%);
+      height: auto;
+    }
+
+    .brand-logo svg [fill] {
+      fill: var(--accent-color) !important;
+    }
+
+    .brand-logo svg [stroke] {
+      stroke: var(--main-color) !important;
+    }
+
     /* Team Tabs */
     .tabs {
       display: flex;
@@ -1181,7 +1200,7 @@
 
   <div class="container">
     <div class="page-header" style="text-align:center;">
-      <img src="../../assets/images/StrikeMasterLogo3.png" alt="strikemasterlogo3" style="max-width: 320px; width: 100%; height: auto; margin: 0 0 10px 0;">
+      <div class="brand-logo" id="brandLogo" aria-label="Strike Master"></div>
       <p style="font-size: 1.1rem; color: #4b4b4b; margin: 0 0 10px 0;">Match history and performance tracking</p>
     </div>
 
@@ -1379,6 +1398,26 @@
         img.src = basePath + savedLogo;
       });
     }
+
+    async function loadBrandLogo() {
+      const container = document.getElementById('brandLogo');
+      if (!container) return;
+      try {
+        const response = await fetch('../../assets/images/StrikeMasterLogo3.svg');
+        if (!response.ok) return;
+        const svgText = await response.text();
+        container.innerHTML = svgText;
+        const svg = container.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('role', 'img');
+          svg.setAttribute('aria-label', 'Strike Master');
+        }
+      } catch (error) {
+        console.warn('Failed to load brand logo:', error);
+      }
+    }
+
+    loadBrandLogo();
 
     let currentGender = 'all';
     let selectedMatchGender = 'boys';
