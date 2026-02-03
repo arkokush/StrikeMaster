@@ -14,6 +14,7 @@
   <script src="../../assets/js/config/api.js"></script>
   <script src="../../assets/js/config/teams.js"></script>
   <script src="../../assets/js/auth-helper.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       margin: 0;
@@ -118,7 +119,45 @@
 
     .nav-links a:hover { background: rgba(255,255,255,0.1); }
     .nav-links a.active { background: var(--accent-color); color: var(--accent-text-color, white); }
-    
+
+    /* Trend Chart */
+    .trend-section {
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--card-bg);
+      margin-bottom: 20px;
+    }
+
+    .trend-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .trend-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .trend-note {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .trend-section canvas {
+      width: 100%;
+      height: 180px;
+      max-height: 28vh;
+    }
+
+    .trend-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 16px 0 8px;
+      font-size: 13px;
     }
 
     /* View Toggle */
@@ -503,14 +542,6 @@
       opacity: 0.6;
     }
 
-    /* Highlight row */
-    .highlight-high {
-      background: rgba(40, 167, 69, 0.1) !important;
-    }
-
-    .highlight-low {
-      background: rgba(220, 53, 69, 0.1) !important;
-    }
 
     /* Hide sections */
     .stats-view, .players-view {
@@ -598,17 +629,22 @@
           <div class="stat-label">Team Avg</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="highGame">0</div>
-          <div class="stat-label">High Game</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="lowGame">0</div>
-          <div class="stat-label">Low Game</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-value" id="highMatch">0</div>
           <div class="stat-label">High Match</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value" id="lowMatch">0</div>
+          <div class="stat-label">Low Match</div>
+        </div>
+      </div>
+
+      <div class="trend-section">
+        <div class="trend-header">
+          <h3>Team Trend</h3>
+          <span class="trend-note">Match total vs average per player</span>
+        </div>
+        <canvas id="teamTrendChart" height="160"></canvas>
+        <div class="trend-empty" id="trendEmpty" style="display: none;">No match data available for trend.</div>
       </div>
 
       <!-- Matches Spreadsheet -->
@@ -619,15 +655,13 @@
               <th class="sortable" data-sort="date">Date ▼</th>
               <th>Opponent</th>
               <th>Location</th>
-              <th class="sortable" data-sort="total">Total Wood</th>
-              <th class="sortable" data-sort="avg">Avg/Player</th>
-              <th>High Game</th>
-              <th>Low Game</th>
+              <th class="sortable" data-sort="total">Match Total</th>
+              <th class="sortable" data-sort="avg">Match Avg</th>
               <th>Score</th>
             </tr>
           </thead>
           <tbody id="matchesBody">
-            <tr><td colspan="8" class="no-data">Loading matches...</td></tr>
+            <tr><td colspan="6" class="no-data">Loading matches...</td></tr>
           </tbody>
         </table>
       </div>
@@ -718,6 +752,7 @@
     let players = [];
     let sortColumn = 'date';
     let sortDirection = 'desc';
+    let teamTrendChart = null;
 
     // Export to CSV function
     function exportToCSV() {
@@ -727,17 +762,16 @@
         return;
       }
       
-      const headers = ['Date', 'Opponent', 'Gender', 'Location', 'Total Wood', 'Avg/Player', 'High Game', 'Low Game', 'Score'];
+      const headers = ['Date', 'Opponent', 'Gender', 'Location', 'Match Total', 'Match Avg', 'Score'];
       const rows = matches.map(match => {
-        const date = new Date(match.match_date).toLocaleDateString('en-US', { 
+        const dateValue = parseLocalDate(match.match_date);
+        const date = dateValue ? dateValue.toLocaleDateString('en-US', { 
           month: 'short', day: 'numeric', year: 'numeric' 
-        });
+        }) : 'N/A';
         const total = getMatchTotal(match);
         const avg = getMatchAvg(match).toFixed(1);
-        const high = getMatchHighGame(match) || '';
-        const low = getMatchLowGame(match) || '';
         const score = `${match.your_points || 0}-${match.opponent_points || 0}`;
-        return [date, match.opponent, match.gender || '', match.location || '', total, avg, high, low, score];
+        return [date, match.opponent, match.gender || '', match.location || '', total, avg, score];
       });
       
       const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
@@ -908,29 +942,116 @@
       return total / varsity.length;
     }
 
-    // Get high game from match
-    function getMatchHighGame(match) {
-      if (!match.records || match.records.length === 0) return 0;
-      let high = 0;
-      match.records.forEach(r => {
-        if (r.game1 && r.game1 > high) high = r.game1;
-        if (r.game2 && r.game2 > high) high = r.game2;
-        if (r.game3 && r.game3 > high) high = r.game3;
-      });
-      return high;
+    function parseLocalDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      if (typeof value === 'string') {
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+          const year = Number(match[1]);
+          const month = Number(match[2]) - 1;
+          const day = Number(match[3]);
+          return new Date(year, month, day);
+        }
+      }
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
-    // Get low game from match (varsity only)
-    function getMatchLowGame(match) {
-      if (!match.records || match.records.length === 0) return 0;
-      let low = 300;
-      const varsity = match.records.filter(r => r.is_varsity);
-      varsity.forEach(r => {
-        if (r.game1 && r.game1 > 0 && r.game1 < low) low = r.game1;
-        if (r.game2 && r.game2 > 0 && r.game2 < low) low = r.game2;
-        if (r.game3 && r.game3 > 0 && r.game3 < low) low = r.game3;
+    function buildTeamTrendData(matches) {
+      const trendMatches = matches
+        .filter(m => m.match_date)
+        .sort((a, b) => {
+          const dateA = parseLocalDate(a.match_date);
+          const dateB = parseLocalDate(b.match_date);
+          return (dateA ? dateA.getTime() : 0) - (dateB ? dateB.getTime() : 0);
+        });
+
+      const labels = [];
+      const totalSeries = [];
+      const avgSeries = [];
+
+      trendMatches.forEach(match => {
+        const dateValue = parseLocalDate(match.match_date);
+        if (!dateValue) return;
+        const total = getMatchTotal(match);
+        const avg = getMatchAvg(match);
+        labels.push(dateValue.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        totalSeries.push(total);
+        avgSeries.push(Number(avg.toFixed(1)));
       });
-      return low === 300 ? 0 : low;
+
+      return { labels, totalSeries, avgSeries };
+    }
+
+    function updateTeamTrendChart(matches) {
+      const { labels, totalSeries, avgSeries } = buildTeamTrendData(matches);
+      const emptyState = document.getElementById('trendEmpty');
+      const canvas = document.getElementById('teamTrendChart');
+
+      if (!labels.length) {
+        emptyState.style.display = 'block';
+        canvas.style.display = 'none';
+        if (teamTrendChart) { teamTrendChart.destroy(); teamTrendChart = null; }
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      canvas.style.display = 'block';
+
+      const data = {
+        labels,
+        datasets: [
+          {
+            label: 'Match Total',
+            data: totalSeries,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.15)',
+            tension: 0.25,
+            fill: true,
+            pointRadius: 3
+          },
+          {
+            label: 'Avg per Player',
+            data: avgSeries,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.15)',
+            tension: 0.25,
+            fill: true,
+            pointRadius: 3
+          }
+        ]
+      };
+
+      const textColor = getComputedStyle(document.body).getPropertyValue('--text-color') || '#1f1f1f';
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: textColor },
+            grid: { color: 'rgba(0,0,0,0.08)' }
+          },
+          x: {
+            ticks: { color: textColor },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: textColor } },
+          tooltip: { mode: 'index', intersect: false }
+        }
+      };
+
+      if (teamTrendChart) {
+        teamTrendChart.data = data;
+        teamTrendChart.options = options;
+        teamTrendChart.update();
+      } else {
+        teamTrendChart = new Chart(canvas.getContext('2d'), { type: 'line', data, options });
+      }
     }
 
     // Render data
@@ -940,7 +1061,6 @@
       // Calculate season stats
       let totalMatches = matches.length;
       let wins = 0, losses = 0;
-      let allGames = [];
       let allMatchTotals = [];
       let totalAvgSum = 0;
       
@@ -954,14 +1074,6 @@
           totalAvgSum += getMatchAvg(m);
         }
         
-        if (m.records) {
-          const varsity = m.records.filter(r => r.is_varsity);
-          varsity.forEach(r => {
-            if (r.game1 && r.game1 > 0) allGames.push(r.game1);
-            if (r.game2 && r.game2 > 0) allGames.push(r.game2);
-            if (r.game3 && r.game3 > 0) allGames.push(r.game3);
-          });
-        }
       });
       
       // Update stats cards
@@ -969,35 +1081,32 @@
       document.getElementById('winRecord').textContent = `${wins}-${losses}`;
       document.getElementById('teamAverage').textContent = totalMatches > 0 
         ? (totalAvgSum / totalMatches).toFixed(1) : '0';
-      document.getElementById('highGame').textContent = allGames.length > 0 
-        ? Math.max(...allGames) : '0';
-      document.getElementById('lowGame').textContent = allGames.length > 0 
-        ? Math.min(...allGames) : '0';
       document.getElementById('highMatch').textContent = allMatchTotals.length > 0 
         ? Math.max(...allMatchTotals) : '0';
+      document.getElementById('lowMatch').textContent = allMatchTotals.length > 0 
+        ? Math.min(...allMatchTotals) : '0';
       
       // Find highest and lowest match totals for highlighting
-      const highMatchTotal = allMatchTotals.length > 0 ? Math.max(...allMatchTotals) : 0;
-      const lowMatchTotal = allMatchTotals.length > 0 ? Math.min(...allMatchTotals) : 0;
+      updateTeamTrendChart(matches);
       
       // Render table
       const tbody = document.getElementById('matchesBody');
       
       if (matches.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No matches found for this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data">No matches found for this filter.</td></tr>';
         return;
       }
       
       tbody.innerHTML = matches.map(match => {
-        const date = new Date(match.match_date);
-        const formattedDate = date.toLocaleDateString('en-US', { 
+        const dateValue = parseLocalDate(match.match_date);
+        const formattedDate = dateValue ? dateValue.toLocaleDateString('en-US', { 
           month: 'short', day: 'numeric', year: 'numeric' 
-        });
+        }) : 'N/A';
         
         const total = getMatchTotal(match);
         const avg = getMatchAvg(match).toFixed(1);
-        const high = getMatchHighGame(match);
-        const low = getMatchLowGame(match);
+        const matchTotal = total;
+        const matchAvg = avg;
         
         const opponentLogo = getTeamLogo(match.opponent) || '';
         
@@ -1033,13 +1142,8 @@
         else if (ourPoints === oppPoints && (ourPoints !== 0 || oppPoints !== 0)) resultClass = 'result-tie';
         let resultText = `${ourPoints} - ${oppPoints}`;
         
-        // Highlight rows
-        let rowClass = '';
-        if (total === highMatchTotal && total > 0) rowClass = 'highlight-high';
-        else if (total === lowMatchTotal && total > 0 && matches.length > 1) rowClass = 'highlight-low';
-        
         return `
-          <tr class="${rowClass}">
+          <tr>
             <td>${formattedDate}</td>
             <td>
               <div class="opponent-cell">
@@ -1049,10 +1153,8 @@
               </div>
             </td>
             <td>${match.location || '-'}</td>
-            <td><strong>${total || '-'}</strong></td>
-            <td>${avg}</td>
-            <td>${high || '-'}</td>
-            <td>${low || '-'}</td>
+            <td><strong>${matchTotal || '-'}</strong></td>
+            <td>${matchAvg}</td>
             <td class="${resultClass}">${resultText}</td>
           </tr>
         `;
