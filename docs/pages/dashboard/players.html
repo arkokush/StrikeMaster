@@ -197,7 +197,7 @@
     .card-body { padding: 20px; }
 
     /* Add Player Form */
-    .add-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
+    .add-form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
 
     .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
 
@@ -433,7 +433,8 @@
 
     .trend-section canvas {
       width: 100%;
-      height: 240px;
+      height: 170px;
+      max-height: 30vh;
     }
 
     .trend-header {
@@ -605,6 +606,13 @@
               <option value="2029">2029</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Gender *</label>
+            <select id="playerGender">
+              <option value="boys">M</option>
+              <option value="girls">F</option>
+            </select>
+          </div>
           <button class="add-btn" id="addPlayerBtn">Add Player</button>
         </div>
       </div>
@@ -717,7 +725,7 @@
           <h3>Season Trend</h3>
           <span class="trend-note">Game average vs. max per match</span>
         </div>
-        <canvas id="trendChart" height="200"></canvas>
+        <canvas id="trendChart" height="160"></canvas>
         <div class="trend-empty" id="trendEmpty" style="display: none;">No match data available for trend.</div>
       </div>
 
@@ -769,6 +777,33 @@
     let trendChart = null;
     let trendVisible = false;
 
+    function parseLocalDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      if (typeof value === 'string') {
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+          const year = Number(match[1]);
+          const month = Number(match[2]) - 1;
+          const day = Number(match[3]);
+          return new Date(year, month, day);
+        }
+      }
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function syncAddPlayerGender() {
+      const genderSelect = document.getElementById('playerGender');
+      if (!genderSelect) return;
+      if (currentGender === 'boys' || currentGender === 'girls') {
+        genderSelect.value = currentGender;
+      } else if (!genderSelect.value) {
+        genderSelect.value = 'boys';
+      }
+    }
+
     function getOpponentLogo(opponentName) { return getTeamLogo(opponentName, '../../assets/images/Team Logos/'); }
 
     async function checkAuth() {
@@ -783,6 +818,7 @@
         document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentGender = btn.dataset.gender;
+        syncAddPlayerGender();
         document.getElementById('playersTitle').textContent = 
           currentGender === 'all' ? 'All Players' : currentGender === 'boys' ? 'Boys Players' : 'Girls Players';
         closeStatsPanel();
@@ -848,7 +884,8 @@
     function isMatchInSeason(matchDate, season) {
       if (season === 'all' || !matchDate) return true;
       const [startYear, endYear] = season.split('-').map(Number);
-      const date = new Date(matchDate);
+      const date = parseLocalDate(matchDate);
+      if (!date) return true;
       const month = date.getMonth();
       const year = date.getFullYear();
       if (month >= 8) {
@@ -1024,7 +1061,9 @@
       if (currentLocationFilter !== 'all') trendRecords = trendRecords.filter(r => r.match && r.match.location === currentLocationFilter);
 
       trendRecords = trendRecords.filter(r => r.match && r.match.match_date).sort((a, b) => {
-        return new Date(a.match.match_date) - new Date(b.match.match_date);
+        const dateA = parseLocalDate(a.match.match_date);
+        const dateB = parseLocalDate(b.match.match_date);
+        return (dateA ? dateA.getTime() : 0) - (dateB ? dateB.getTime() : 0);
       });
 
       const labels = [];
@@ -1036,7 +1075,8 @@
         if (games.length === 0) return;
         const avg = games.reduce((sum, g) => sum + g, 0) / games.length;
         const max = Math.max(...games);
-        const dateLabel = new Date(record.match.match_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const dateValue = parseLocalDate(record.match.match_date);
+        const dateLabel = dateValue ? dateValue.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
         labels.push(dateLabel);
         avgSeries.push(Number(avg.toFixed(1)));
         maxSeries.push(max);
@@ -1153,14 +1193,15 @@
       if (filteredRecords.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="no-stats">No match data available for this filter</td></tr>'; return; }
 
       filteredRecords.sort((a, b) => {
-        const dateA = a.match ? new Date(a.match.match_date) : new Date(0);
-        const dateB = b.match ? new Date(b.match.match_date) : new Date(0);
-        return dateB - dateA;
+        const dateA = a.match ? parseLocalDate(a.match.match_date) : null;
+        const dateB = b.match ? parseLocalDate(b.match.match_date) : null;
+        return (dateB ? dateB.getTime() : 0) - (dateA ? dateA.getTime() : 0);
       });
 
       tbody.innerHTML = filteredRecords.map(record => {
         const match = record.match || {};
-        const date = match.match_date ? new Date(match.match_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+        const matchDateValue = match.match_date ? parseLocalDate(match.match_date) : null;
+        const date = matchDateValue ? matchDateValue.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
         const g1 = record.game1 || 0, g2 = record.game2 || 0, g3 = record.game3 || 0;
         const total = g1 + g2 + g3;
         const gamesPlayed = (record.game1 ? 1 : 0) + (record.game2 ? 1 : 0) + (record.game3 ? 1 : 0);
@@ -1188,17 +1229,20 @@
       const firstName = document.getElementById('firstName').value.trim();
       const lastName = document.getElementById('lastName').value.trim();
       const gradYear = document.getElementById('gradYear').value;
+      const genderSelect = document.getElementById('playerGender');
+      const selectedGender = genderSelect ? genderSelect.value : (currentGender === 'girls' ? 'girls' : 'boys');
       if (!firstName || !lastName || !gradYear) { showMessage('Please fill in all required fields.', 'error'); return; }
       try {
         const API_BASE = window.API_BASE_URL || 'https://strikemaster-production.up.railway.app';
         const response = await fetch(`${API_BASE}/api/players`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ coachId, firstName, lastName, gradYear: parseInt(gradYear), gender: currentGender === 'all' ? 'boys' : currentGender })
+          body: JSON.stringify({ coachId, firstName, lastName, gradYear: parseInt(gradYear), gender: selectedGender })
         });
         if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to add player'); }
         document.getElementById('firstName').value = '';
         document.getElementById('lastName').value = '';
         document.getElementById('gradYear').value = '';
+        if (genderSelect) genderSelect.value = currentGender === 'girls' ? 'girls' : 'boys';
         showMessage(`${firstName} ${lastName} added successfully!`, 'success');
         loadPlayers();
       } catch (error) { showMessage(error.message || 'Failed to add player.', 'error'); }
@@ -1249,7 +1293,7 @@
       });
     }
 
-    checkAuth().then(user => { if (user) { applyStudentMode(); loadPlayers(); } });
+    checkAuth().then(user => { if (user) { applyStudentMode(); syncAddPlayerGender(); loadPlayers(); } });
   </script>
 </body>
 </html>
