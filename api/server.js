@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,29 @@ if (!process.env.SUPABASE_SERVICE_KEY) {
     process.env.SUPABASE_URL || 'https://fxqddamrgadttkfxvjth.supabase.co',
     process.env.SUPABASE_SERVICE_KEY
   );
+}
+
+const mailTransport = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: Boolean(process.env.SMTP_SECURE === 'true'),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    })
+  : null;
+
+async function sendEmail(to, subject, html) {
+  if (!mailTransport) return false;
+  await mailTransport.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject,
+    html
+  });
+  return true;
 }
 
 // CORS - allow GitHub Pages and local development
@@ -76,6 +100,27 @@ async function resolveSharedCoaches(sharedCoaches, ownerCoachId) {
   }
 
   return resolved;
+}
+
+async function getOwnerCoachIds(coachId) {
+  const ownerIds = new Set([coachId]);
+  const { data } = await supabase
+    .from('coach_access')
+    .select('owner_coach_id')
+    .eq('coach_id', coachId);
+  (data || []).forEach(entry => ownerIds.add(entry.owner_coach_id));
+  return Array.from(ownerIds);
+}
+
+async function canEditTeam(coachId, ownerCoachId) {
+  if (coachId === ownerCoachId) return true;
+  const { data } = await supabase
+    .from('coach_access')
+    .select('can_edit')
+    .eq('owner_coach_id', ownerCoachId)
+    .eq('coach_id', coachId)
+    .single();
+  return !!data?.can_edit;
 }
 
 // ==================== HEALTH CHECK ====================
@@ -581,6 +626,203 @@ app.post('/api/auth/change-password', async (req, res) => {
   }
 });
 
+// ==================== COACH ACCESS ====================
+
+app.get('/api/coach-access', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { ownerCoachId } = req.query;
+    if (!ownerCoachId) return res.status(400).json({ error: 'ownerCoachId is required' });
+
+    const { data: access } = await supabase
+      .from('coach_access')
+      .select('coach_id, can_edit')
+      .eq('owner_coach_id', ownerCoachId);
+
+    const coachIds = (access || []).map(entry => entry.coach_id);
+    const { data: coaches } = coachIds.length
+      ? await supabase.from('users').select('id, email, team_code, first_name, last_name').in('id', coachIds)
+      : { data: [] };
+
+    const coachMap = new Map((coaches || []).map(c => [c.id, c]));
+    const response = (access || []).map(entry => {
+      const coach = coachMap.get(entry.coach_id);
+      return {
+        coach_id: entry.coach_id,
+        can_edit: entry.can_edit,
+        email: coach?.email || null,
+        team_code: coach?.team_code || null,
+        name: coach ? `${coach.first_name || ''} ${coach.last_name || ''}`.trim() : ''
+      };
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('Coach access list error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post('/api/coach-access', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { ownerCoachId, identifier, canEdit } = req.body;
+    if (!ownerCoachId || !identifier) {
+      return res.status(400).json({ error: 'ownerCoachId and identifier are required' });
+    }
+
+    const coach = await resolveCoachByIdentifier(identifier);
+    if (!coach) return res.status(404).json({ error: 'Coach not found' });
+    if (coach.id === ownerCoachId) {
+      return res.status(400).json({ error: 'Cannot invite yourself' });
+    }
+
+    const { data, error } = await supabase
+      .from('coach_access')
+      .upsert({
+        owner_coach_id: ownerCoachId,
+        coach_id: coach.id,
+        can_edit: !!canEdit
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error('Coach access create error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete('/api/coach-access/:coachId', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { ownerCoachId } = req.query;
+    if (!ownerCoachId) return res.status(400).json({ error: 'ownerCoachId is required' });
+
+    const { error } = await supabase
+      .from('coach_access')
+      .delete()
+      .eq('owner_coach_id', ownerCoachId)
+      .eq('coach_id', req.params.coachId);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Coach access delete error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get('/api/coach-access/owners', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { coachId } = req.query;
+    if (!coachId) return res.status(400).json({ error: 'coachId is required' });
+
+    const { data: access } = await supabase
+      .from('coach_access')
+      .select('owner_coach_id, can_edit')
+      .eq('coach_id', coachId);
+
+    if (!access || access.length === 0) {
+      return res.json([]);
+    }
+
+    const ownerIds = access.map(entry => entry.owner_coach_id);
+    const { data: owners } = await supabase
+      .from('users')
+      .select('id, team_name, email, first_name, last_name')
+      .in('id', ownerIds);
+
+    const ownerMap = new Map((owners || []).map(o => [o.id, o]));
+    const result = access.map(entry => {
+      const owner = ownerMap.get(entry.owner_coach_id);
+      return {
+        owner_coach_id: entry.owner_coach_id,
+        can_edit: entry.can_edit,
+        team_name: owner?.team_name || null,
+        email: owner?.email || null,
+        name: owner ? `${owner.first_name || ''} ${owner.last_name || ''}`.trim() : ''
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Coach access owners error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==================== ANNOUNCEMENTS ====================
+
+app.get('/api/announcements', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { coachId } = req.query;
+    if (!coachId) return res.status(400).json({ error: 'coachId is required' });
+
+    const ownerCoachIds = await getOwnerCoachIds(coachId);
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .in('coach_id', ownerCoachIds)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Announcements fetch error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post('/api/announcements', async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ error: 'Database not configured' });
+    const { coachId, title, body, ownerCoachId } = req.body;
+    if (!coachId || !title || !body) {
+      return res.status(400).json({ error: 'coachId, title, and body are required' });
+    }
+
+    const targetCoachId = ownerCoachId || coachId;
+    if (!(await canEditTeam(coachId, targetCoachId))) {
+      return res.status(403).json({ error: 'Edit access denied' });
+    }
+
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert([{ coach_id: targetCoachId, title, body }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const { data: players } = await supabase
+      .from('players')
+      .select('email')
+      .eq('coach_id', targetCoachId)
+      .not('email', 'is', null);
+
+    if (players && players.length) {
+      const emails = players.map(p => p.email).filter(Boolean);
+      if (emails.length) {
+        await sendEmail(
+          emails,
+          `New Announcement: ${title}`,
+          `<p>${body}</p>`
+        );
+      }
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Announcement create error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Link Google Account to existing user
 app.post('/api/auth/link-google', async (req, res) => {
   try {
@@ -855,10 +1097,12 @@ app.get('/api/players', async (req, res) => {
       return res.status(400).json({ error: 'coachId is required' });
     }
 
+    const ownerCoachIds = await getOwnerCoachIds(coachId);
+
     let query = supabase
       .from('players')
       .select('*')
-      .eq('coach_id', coachId)
+      .in('coach_id', ownerCoachIds)
       .eq('is_active', true)
       .order('last_name');
 
@@ -905,19 +1149,26 @@ app.post('/api/players', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { coachId, firstName, lastName, gender, gradYear } = req.body;
+    const { coachId, firstName, lastName, gender, gradYear, email, ownerCoachId } = req.body;
 
     if (!coachId || !firstName || !lastName || !gender) {
       return res.status(400).json({ error: 'Required: coachId, firstName, lastName, gender' });
     }
 
+    const targetCoachId = ownerCoachId || coachId;
+    const allowed = await canEditTeam(coachId, targetCoachId);
+    if (!allowed) {
+      return res.status(403).json({ error: 'Edit access denied' });
+    }
+
     const { data, error } = await supabase
       .from('players')
       .insert([{
-        coach_id: coachId,
+        coach_id: targetCoachId,
         first_name: firstName,
         last_name: lastName,
         gender,
+        email: email || null,
         grad_year: gradYear ? parseInt(gradYear) : null,
         is_active: true
       }])
@@ -925,6 +1176,23 @@ app.post('/api/players', async (req, res) => {
       .single();
 
     if (error) throw error;
+    if (email) {
+      const { data: owner } = await supabase
+        .from('users')
+        .select('team_code, team_name')
+        .eq('id', targetCoachId)
+        .single();
+
+      const teamCode = owner?.team_code || '';
+      const teamName = owner?.team_name || 'your team';
+      await sendEmail(
+        email,
+        `Welcome to ${teamName}`,
+        `<p>You’ve been invited to join <strong>${teamName}</strong> on StrikeMaster.</p>
+         <p>Your team code is: <strong>${teamCode}</strong></p>
+         <p>Use this code to sign in as a player.</p>`
+      );
+    }
     res.json(data);
 
   } catch (error) {
@@ -940,7 +1208,7 @@ app.put('/api/players/:id', async (req, res) => {
       return res.status(500).json({ error: 'Database not configured' });
     }
 
-    const { firstName, lastName, gender, gradYear, isActive } = req.body;
+    const { firstName, lastName, gender, gradYear, isActive, coachId, email } = req.body;
 
     const updateData = {};
     if (firstName !== undefined) updateData.first_name = firstName;
@@ -948,6 +1216,19 @@ app.put('/api/players/:id', async (req, res) => {
     if (gender !== undefined) updateData.gender = gender;
     if (gradYear !== undefined) updateData.grad_year = parseInt(gradYear);
     if (isActive !== undefined) updateData.is_active = isActive;
+
+    if (coachId) {
+      const { data: player } = await supabase
+        .from('players')
+        .select('coach_id')
+        .eq('id', req.params.id)
+        .single();
+      if (player?.coach_id && !(await canEditTeam(coachId, player.coach_id))) {
+        return res.status(403).json({ error: 'Edit access denied' });
+      }
+    }
+
+    if (email !== undefined) updateData.email = email;
 
     const { data, error } = await supabase
       .from('players')
@@ -1003,17 +1284,24 @@ app.get('/api/matches', async (req, res) => {
       return res.status(400).json({ error: 'coachId is required' });
     }
 
-    let ownQuery = supabase
+    const ownerCoachIds = await getOwnerCoachIds(coachId);
+    const { data: accessList } = await supabase
+      .from('coach_access')
+      .select('owner_coach_id, can_edit')
+      .eq('coach_id', coachId);
+    const accessMap = new Map((accessList || []).map(entry => [entry.owner_coach_id, entry.can_edit]));
+
+    let ownerQuery = supabase
       .from('matches')
       .select('*')
-      .eq('coach_id', coachId);
+      .in('coach_id', ownerCoachIds);
 
     if (gender) {
-      ownQuery = ownQuery.eq('gender', gender);
+      ownerQuery = ownerQuery.eq('gender', gender);
     }
 
-    const { data: ownMatches, error: ownError } = await ownQuery;
-    if (ownError) throw ownError;
+    const { data: ownerMatches, error: ownerError } = await ownerQuery;
+    if (ownerError) throw ownerError;
 
     const { data: permissions, error: permError } = await supabase
       .from('match_permissions')
@@ -1039,8 +1327,13 @@ app.get('/api/matches', async (req, res) => {
     const permissionMap = new Map((permissions || []).map(p => [p.match_id, p.can_edit]));
     const matchMap = new Map();
 
-    (ownMatches || []).forEach(match => {
-      matchMap.set(match.id, { ...match, can_edit: true, is_owner: true });
+    (ownerMatches || []).forEach(match => {
+      const isOwner = match.coach_id === coachId;
+      matchMap.set(match.id, {
+        ...match,
+        can_edit: isOwner ? true : !!accessMap.get(match.coach_id),
+        is_owner: isOwner
+      });
     });
 
     sharedMatches.forEach(match => {
@@ -1092,11 +1385,23 @@ app.get('/api/matches/:id', async (req, res) => {
         .single();
 
       if (!permission) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
+        const { data: access } = await supabase
+          .from('coach_access')
+          .select('can_edit')
+          .eq('owner_coach_id', data.coach_id)
+          .eq('coach_id', coachId)
+          .single();
 
-      data.can_edit = !!permission.can_edit;
-      data.is_owner = false;
+        if (!access) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+
+        data.can_edit = !!access.can_edit;
+        data.is_owner = false;
+      } else {
+        data.can_edit = !!permission.can_edit;
+        data.is_owner = false;
+      }
     } else {
       data.can_edit = true;
       data.is_owner = true;
@@ -1583,10 +1888,12 @@ app.get('/api/stats/team', async (req, res) => {
     }
 
     // Get all players for this coach
+    const ownerCoachIds = await getOwnerCoachIds(coachId);
+
     let playersQuery = supabase
       .from('players')
       .select('id, first_name, last_name, gender')
-      .eq('coach_id', coachId)
+      .in('coach_id', ownerCoachIds)
       .eq('is_active', true);
 
     if (gender) {

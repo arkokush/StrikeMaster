@@ -58,6 +58,7 @@ CREATE TABLE players (
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   gender VARCHAR(10) NOT NULL CHECK (gender IN ('boys', 'girls')),
+  email VARCHAR(255),
   grad_year INTEGER,
   coach_id UUID REFERENCES users(id) ON DELETE CASCADE,  -- Links to coach's user account
   is_active BOOLEAN DEFAULT true,
@@ -67,6 +68,21 @@ CREATE TABLE players (
 -- Index for fast player lookups by coach
 CREATE INDEX idx_players_coach ON players(coach_id);
 CREATE INDEX idx_players_gender ON players(gender);
+
+-- =====================================================
+-- 2B. COACH ACCESS (Invite coaches to a team)
+-- =====================================================
+CREATE TABLE coach_access (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  can_edit BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(owner_coach_id, coach_id)
+);
+
+CREATE INDEX idx_coach_access_owner ON coach_access(owner_coach_id);
+CREATE INDEX idx_coach_access_coach ON coach_access(coach_id);
 
 -- =====================================================
 -- 3. MATCHES TABLE (Opponent, final score, win/loss)
@@ -89,6 +105,19 @@ CREATE TABLE matches (
 CREATE INDEX idx_matches_coach ON matches(coach_id);
 CREATE INDEX idx_matches_gender ON matches(gender);
 CREATE INDEX idx_matches_date ON matches(match_date);
+
+-- =====================================================
+-- 3C. ANNOUNCEMENTS
+-- =====================================================
+CREATE TABLE announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(140) NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_announcements_coach ON announcements(coach_id);
 
 -- =====================================================
 -- 3B. MATCH PERMISSIONS (Shared coach access)
@@ -130,9 +159,11 @@ CREATE INDEX idx_records_player ON records(player_id);
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coach_access ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE match_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
 -- 6. Create permissive policies (service role access)
@@ -140,9 +171,11 @@ ALTER TABLE records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role full access" ON users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON players FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON coach_access FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON matches FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON match_permissions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Service role full access" ON records FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access" ON announcements FOR ALL USING (true) WITH CHECK (true);
 
 -- =====================================================
 -- 7. Grant permissions
@@ -154,7 +187,9 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 -- SCHEMA SUMMARY:
 -- =====================================================
 -- users: id, email, username, first_name, last_name, team_name, team_code, created_at
--- players: id, first_name, last_name, gender, grad_year, coach_id, is_active, created_at
+-- players: id, first_name, last_name, gender, email, grad_year, coach_id, is_active, created_at
+-- coach_access: id, owner_coach_id, coach_id, can_edit, created_at
 -- matches: id, coach_id, gender, opponent, match_date, our_score, opponent_score, result, location, is_complete, created_at
 -- match_permissions: id, match_id, coach_id, can_edit, created_at
 -- records: id, match_id, player_id, game1, game2, game3, total (auto-calculated), created_at
+-- announcements: id, coach_id, title, body, created_at

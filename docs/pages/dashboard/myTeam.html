@@ -534,6 +534,74 @@
       display: block;
     }
 
+    .invite-section {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .invite-section h3 {
+      color: var(--accent-color);
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .invite-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .invite-row input {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--content-bg);
+      color: var(--text-color);
+    }
+
+    .invite-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .invite-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-color);
+    }
+
+    .invite-btn {
+      background: var(--accent-color);
+      color: var(--accent-text-color, white);
+      border: 2px solid var(--button-border-color, rgba(0, 0, 0, 0.18));
+      padding: 10px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .invite-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .invite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--content-bg);
+    }
+
     .footer {
       text-align: center;
       padding: 20px;
@@ -584,6 +652,7 @@
       <a href="players.html">Players</a>
       <a href="../settings/appearanceSettings.html">Settings</a>
       <a href="myTeam.html" class="active">My Team</a>
+      <a href="announcements.html">Announcements</a>
       <a href="#" id="logoutBtn" style="color:#dc3545;">Logout</a>
     </div>
   </div>
@@ -602,6 +671,19 @@
 
     <!-- Match Stats View -->
     <div class="stats-view active" id="statsView">
+      <div class="invite-section">
+        <h3>Invite Coaches</h3>
+        <div class="invite-row">
+          <input type="text" id="inviteCoachIdentifier" placeholder="Coach email or coach code">
+          <label class="invite-toggle">
+            <input type="checkbox" id="inviteCoachCanEdit">
+            <span>Can edit</span>
+          </label>
+          <button class="invite-btn" id="inviteCoachBtn" type="button">Invite</button>
+        </div>
+        <div class="invite-list" id="inviteCoachList"></div>
+      </div>
+
       <div class="filters">
         <button class="export-btn" onclick="exportToCSV()">
           Export CSV
@@ -753,6 +835,8 @@
     let sortColumn = 'date';
     let sortDirection = 'desc';
     let teamTrendChart = null;
+    let activeOwnerCoachId = currentUser?.id;
+    let canEditTeamAccess = true;
 
     // Export to CSV function
     function exportToCSV() {
@@ -1245,7 +1329,9 @@
           firstName,
           lastName,
           gradYear,
-          gender: currentPlayerGender
+          gender: currentPlayerGender,
+          email,
+          ownerCoachId: activeOwnerCoachId
         });
 
         if (!res.ok) {
@@ -1268,6 +1354,75 @@
         showMessage('Failed to add player.', 'error');
       }
     }
+
+    async function loadCoachInvites() {
+      try {
+        const res = await api.get(`/api/coach-access?ownerCoachId=${currentUser.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = document.getElementById('inviteCoachList');
+        list.innerHTML = (data || []).map(entry => {
+          const label = entry.email || entry.team_code || entry.name || entry.coach_id;
+          return `
+            <div class="invite-item">
+              <div>${label} • ${entry.can_edit ? 'Can edit' : 'View only'}</div>
+              <button class="remove-btn" data-coach-id="${entry.coach_id}">Remove</button>
+            </div>
+          `;
+        }).join('');
+
+        list.querySelectorAll('.remove-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const coachId = btn.dataset.coachId;
+            const removeRes = await api.delete(`/api/coach-access/${coachId}?ownerCoachId=${currentUser.id}`);
+            if (removeRes.ok) loadCoachInvites();
+          });
+        });
+      } catch (error) {
+        console.error('Load coach invites failed:', error);
+      }
+    }
+
+    async function loadOwnerTeams() {
+      try {
+        const res = await api.get(`/api/coach-access/owners?coachId=${currentUser.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.length) {
+          activeOwnerCoachId = currentUser.id;
+          canEditTeamAccess = true;
+          document.querySelector('.invite-section').style.display = 'block';
+          return;
+        }
+        activeOwnerCoachId = data[0].owner_coach_id;
+        canEditTeamAccess = !!data[0].can_edit;
+        document.querySelector('.invite-section').style.display = 'none';
+      } catch (error) {
+        console.error('Load owner teams failed:', error);
+      }
+    }
+
+    document.getElementById('inviteCoachBtn')?.addEventListener('click', async () => {
+      const identifier = document.getElementById('inviteCoachIdentifier').value.trim();
+      const canEdit = document.getElementById('inviteCoachCanEdit').checked;
+      if (!identifier) {
+        showMessage('Enter a coach email or code.', 'error');
+        return;
+      }
+      const res = await api.post('/api/coach-access', {
+        ownerCoachId: currentUser.id,
+        identifier,
+        canEdit
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        showMessage(data.error || 'Failed to invite coach.', 'error');
+        return;
+      }
+      document.getElementById('inviteCoachIdentifier').value = '';
+      document.getElementById('inviteCoachCanEdit').checked = false;
+      loadCoachInvites();
+    });
 
     // Remove player
     async function removePlayer(playerId) {
@@ -1307,7 +1462,12 @@
     document.getElementById('savePlayerBtn').addEventListener('click', addPlayer);
 
     // Initialize - load matches
-    loadMatches();
+    loadOwnerTeams().then(() => {
+      loadMatches();
+      if (canEditTeamAccess) {
+        loadCoachInvites();
+      }
+    });
   </script>
 </body>
 </html>
