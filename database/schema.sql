@@ -28,6 +28,8 @@ CREATE TABLE users (
   last_name VARCHAR(100),
   team_name VARCHAR(255),           -- e.g., "Pascack Hills"
   team_code VARCHAR(10) UNIQUE,     -- 6-char code for students to join
+  google_id VARCHAR(255) UNIQUE,    -- Google OAuth ID
+  avatar_url TEXT,                  -- Profile picture URL
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -43,6 +45,9 @@ CREATE TABLE students (
   password_hash VARCHAR(255) NOT NULL,
   coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
   team_code VARCHAR(10) NOT NULL,
+  google_id VARCHAR(255) UNIQUE,    -- Google OAuth ID
+  avatar_url TEXT,                  -- Profile picture URL
+  name VARCHAR(255),                -- Full name for students
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -193,7 +198,8 @@ CREATE POLICY "Service role full access" ON announcements FOR ALL USING (true) W
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
--- =====================================================
+-- =====================================================google_id, avatar_url, created_at
+-- students: id, email, password_hash, coach_id, team_code, google_id, avatar_url, name, 
 -- SCHEMA SUMMARY:
 -- =====================================================
 -- users: id, email, username, first_name, last_name, team_name, team_code, created_at

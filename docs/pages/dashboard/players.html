@@ -353,6 +353,33 @@
       padding: 12px 10px;
       text-align: left;
       border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .spreadsheet-table th:hover {
+      background: color-mix(in srgb, var(--accent-color) 10%, var(--content-bg));
+    }
+
+    .spreadsheet-table th.sortable::after {
+      content: ' ↕';
+      opacity: 0.3;
+      margin-left: 4px;
+      font-size: 10px;
+    }
+
+    .spreadsheet-table th.sorted-asc::after {
+      content: ' ↑';
+      opacity: 1;
+      color: var(--accent-color);
+    }
+
+    .spreadsheet-table th.sorted-desc::after {
+      content: ' ↓';
+      opacity: 1;
+      color: var(--accent-color);
     }
 
     .spreadsheet-table td {
@@ -884,6 +911,8 @@
     let currentGameFilter = 'all';
     let trendChart = null;
     let trendVisible = false;
+    let sortColumn = null;
+    let sortDirection = 'asc';
 
     function parseLocalDate(value) {
       if (!value) return null;
@@ -1047,17 +1076,29 @@
       const tbody = document.getElementById('spreadsheetBody');
       const headerRow = document.getElementById('spreadsheetHeaderRow');
       const showGender = currentGender === 'all';
-
-      headerRow.innerHTML = `
-        <th>Player</th>
-        ${showGender ? '<th>Gender</th>' : ''}
-        <th>Matches</th>
-        <th>Avg G1</th>
-        <th>Avg G2</th>
-        <th>Avg G3</th>
-        <th>Avg G4</th>
-        <th>Overall Avg</th>
+ class="sortable" data-column="name">Player</th>
+        ${showGender ? '<th class="sortable" data-column="gender">Gender</th>' : ''}
+        <th class="sortable" data-column="matches">Matches</th>
+        <th class="sortable" data-column="avgG1">Avg G1</th>
+        <th class="sortable" data-column="avgG2">Avg G2</th>
+        <th class="sortable" data-column="avgG3">Avg G3</th>
+        <th class="sortable" data-column="avgG4">Avg G4</th>
+        <th class="sortable" data-column="overallAvg">Overall Avg</th>
       `;
+
+      // Add click handlers to sortable headers
+      headerRow.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const column = th.dataset.column;
+          if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+          } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+          }
+          renderSpreadsheetWithSort();
+        });
+      });
 
       if (!players || players.length === 0) {
         const colSpan = showGender ? 8 : 7;
@@ -1079,6 +1120,85 @@
           return { player, stats: calculateAverageStats([]) };
         }
       }));
+
+      // Store results for sorting
+      window.spreadsheetData = results;
+      renderSpreadsheetWithSort();
+    }
+
+    function renderSpreadsheetWithSort() {
+      const tbody = document.getElementById('spreadsheetBody');
+      const headerRow = document.getElementById('spreadsheetHeaderRow');
+      const showGender = currentGender === 'all';
+      
+      if (!window.spreadsheetData || window.spreadsheetData.length === 0) {
+        return;
+      }
+
+      // Update header sort indicators
+      headerRow.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        if (th.dataset.column === sortColumn) {
+          th.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+        }
+      });
+
+      // Sort data
+      let sortedData = [...window.spreadsheetData];
+      if (sortColumn) {
+        sortedData.sort((a, b) => {
+          let valA, valB;
+          
+          switch (sortColumn) {
+            case 'name':
+              valA = `${a.player.first_name} ${a.player.last_name}`.toLowerCase();
+              valB = `${b.player.first_name} ${b.player.last_name}`.toLowerCase();
+              break;
+            case 'gender':
+              valA = a.player._gender || currentGender;
+              valB = b.player._gender || currentGender;
+              break;
+            case 'matches':
+              valA = a.stats.matches;
+              valB = b.stats.matches;
+              break;
+            case 'avgG1':
+              valA = parseFloat(a.stats.avgG1);
+              valB = parseFloat(b.stats.avgG1);
+              break;
+            case 'avgG2':
+              valA = parseFloat(a.stats.avgG2);
+              valB = parseFloat(b.stats.avgG2);
+              break;
+            case 'avgG3':
+              valA = parseFloat(a.stats.avgG3);
+              valB = parseFloat(b.stats.avgG3);
+              break;
+            case 'avgG4':
+              valA = parseFloat(a.stats.avgG4);
+              valB = parseFloat(b.stats.avgG4);
+              break;
+            case 'overallAvg':
+              valA = parseFloat(a.stats.overallAvg);
+              valB = parseFloat(b.stats.overallAvg);
+              break;
+            default:
+              return 0;
+          }
+          
+          if (typeof valA === 'string') {
+            return sortDirection === 'asc' 
+              ? valA.localeCompare(valB)
+              : valB.localeCompare(valA);
+          } else {
+            return sortDirection === 'asc' 
+              ? valA - valB
+              : valB - valA;
+          }
+        });
+      }
+
+      tbody.innerHTML = sortedData
 
       tbody.innerHTML = results.map(({ player, stats }) => `
         <tr>

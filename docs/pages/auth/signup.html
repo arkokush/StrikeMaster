@@ -469,24 +469,30 @@
       }
 
       // Handle school selection
+      let selectedSchoolLogo = null;
       schoolSelect.addEventListener('change', function() {
         const value = this.value;
         if (value === 'other') {
           customTeamNameContainer.style.display = 'block';
           teamNameInput.required = true;
           selectedSchoolColors = null;
+          selectedSchoolLogo = null;
         } else if (value) {
           customTeamNameContainer.style.display = 'none';
           teamNameInput.required = false;
           teamNameInput.value = '';
-          // Get colors for selected school
+          // Get colors and logo for selected school
           if (typeof getTeamColors !== 'undefined') {
             selectedSchoolColors = getTeamColors(value);
+          }
+          if (typeof getTeamLogo !== 'undefined') {
+            selectedSchoolLogo = getTeamLogo(value, '');
           }
         } else {
           customTeamNameContainer.style.display = 'none';
           teamNameInput.required = false;
           selectedSchoolColors = null;
+          selectedSchoolLogo = null;
         }
       });
 
@@ -725,10 +731,16 @@
             localStorage.setItem('bowling_role', 'coach');
           }
           
-          // Apply team colors to localStorage
+          // Apply team colors and logo to localStorage
           if (selectedSchoolColors) {
             localStorage.setItem('accentColor', selectedSchoolColors.accentColor);
             localStorage.setItem('mainColor', selectedSchoolColors.mainColor);
+          }
+          if (selectedSchoolLogo) {
+            // Extract just the filename from the path
+            const logoFilename = selectedSchoolLogo.split('/').pop();
+            localStorage.setItem('teamLogo', logoFilename);
+            localStorage.setItem('selectedLogo', logoFilename);
           }
 
           showMessage(`Welcome, Coach ${firstName}! Your team code is: <strong>${data.teamCode}</strong><br>Redirecting...`, 'success');
