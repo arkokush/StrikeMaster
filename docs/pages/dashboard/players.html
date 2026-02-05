@@ -1076,7 +1076,8 @@
       const tbody = document.getElementById('spreadsheetBody');
       const headerRow = document.getElementById('spreadsheetHeaderRow');
       const showGender = currentGender === 'all';
- class="sortable" data-column="name">Player</th>
+      headerRow.innerHTML = `
+        <th class="sortable" data-column="name">Player</th>
         ${showGender ? '<th class="sortable" data-column="gender">Gender</th>' : ''}
         <th class="sortable" data-column="matches">Matches</th>
         <th class="sortable" data-column="avgG1">Avg G1</th>
@@ -1198,9 +1199,7 @@
         });
       }
 
-      tbody.innerHTML = sortedData
-
-      tbody.innerHTML = results.map(({ player, stats }) => `
+      tbody.innerHTML = sortedData.map(({ player, stats }) => `
         <tr>
           <td>${player.first_name} ${player.last_name}</td>
           ${showGender ? `<td>${player._gender || currentGender}</td>` : ''}
